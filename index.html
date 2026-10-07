@@ -27,6 +27,7 @@
     --orange: #ff8a3d;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { height: 100%; height: -webkit-fill-available; }
   html, body {
     margin: 0;
     background: var(--bg);
@@ -41,7 +42,7 @@
   }
   body {
     min-height: 100vh;
-    min-height: 100dvh;
+    min-height: 100lvh;
     overflow-x: hidden;
     transition: opacity .22s ease, transform .22s ease;
   }
@@ -463,6 +464,21 @@ if (yaVisto) {
     try { sessionStorage.setItem('splashVisto', '1'); } catch (e) {}
   }, reducido ? 500 : 2600);
 }
+
+/* ---------- Pantalla completa (oculta las barras del sistema) ---------- */
+function entrarPantallaCompleta() {
+  var el = document.documentElement;
+  if (document.fullscreenElement || !el.requestFullscreen) return;
+  try {
+    var p = el.requestFullscreen({ navigationUI: 'hide' });
+    if (p && p.catch) p.catch(function () {});
+  } catch (e) {}
+}
+// Al primer toque (menos en las tarjetas, que cambian de página)
+document.addEventListener('click', function (e) {
+  if (e.target.closest && e.target.closest('.card')) return;
+  entrarPantallaCompleta();
+});
 
 /* ---------- Instalación como app (funciona sin internet) ---------- */
 if ('serviceWorker' in navigator) {
