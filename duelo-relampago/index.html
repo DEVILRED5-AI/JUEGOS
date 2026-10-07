@@ -1,1 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0e0e12">
+<title>Duelo Relámpago</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e12;
+    --ink: #f2f0ea;
+    --ink-dim: #9a98a3;
+    --p1: #00d9c0;
+    --p1-dim: #06413b;
+    --p2: #ff5876;
+    --p2-dim: #4a141f;
+    --gold: #ffcf5c;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .half {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: background-color 0.15s ease;
+    padding: 12px;
+    gap: 6px;
+  }
+  #half-top {
+    transform: rotate(180deg);
+    background: var(--p2-dim);
+    border-bottom: 1px solid #000;
+  }
+  #half-bottom {
+    background: var(--p1-dim);
+  }
+  .half.go-top { background: var(--p2); }
+  .half.go-bottom { background: var(--p1); }
+  .half.early { background: #2a2a30 !important; }
 
+  .player-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    opacity: 0.85;
+  }
+  #label-top { color: var(--p2); }
+  #label-bottom { color: var(--p1); }
+  .half.go-top #label-top,
+  .half.go-bottom #label-bottom { color: #0e0e12; }
+
+  .status-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(22px, 7vw, 34px);
+    text-align: center;
+    line-height: 1.15;
+    max-width: 320px;
+    white-space: pre-line;
+  }
+  .half.go-top .status-text,
+  .half.go-bottom .status-text { color: #0e0e12; }
+
+  .score-dots {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    border: 1.5px solid rgba(255,255,255,0.25);
+  }
+  .dot.filled-top { background: var(--p2); border-color: var(--p2); }
+  .dot.filled-bottom { background: var(--p1); border-color: var(--p1); }
+
+  #center-bar {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 5;
+  }
+  #round-badge {
+    background: var(--bg);
+    border: 2px solid #2a2a30;
+    border-radius: 999px;
+    padding: 5px 16px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink-dim);
+    letter-spacing: 0.03em;
+  }
+
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(14,14,18,0.96);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    z-index: 20;
+    padding: 24px;
+    text-align: center;
+  }
+  #overlay.hidden { display: none; }
+  #overlay h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(30px, 9vw, 44px);
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  #overlay h1 .bolt { color: var(--gold); }
+  #overlay p {
+    color: var(--ink-dim);
+    font-size: 15px;
+    max-width: 300px;
+    line-height: 1.6;
+    margin: 0;
+  }
+  #overlay p strong { color: var(--p1); }
+  #overlay p strong.two { color: var(--p2); }
+  .btn {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    padding: 14px 30px;
+    border-radius: 14px;
+    border: none;
+    background: var(--gold);
+    color: #1a1400;
+    cursor: pointer;
+  }
+  .btn:active { transform: scale(0.97); }
+  .back-link {
+    color: var(--ink-dim);
+    font-size: 14px;
+    text-decoration: none;
+    padding: 8px 12px;
+  }
+
+  #winner-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    z-index: 25;
+    text-align: center;
+    padding: 24px;
+  }
+  #winner-overlay.hidden { display: none; }
+  #winner-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(28px, 9vw, 42px);
+  }
+  #winner-sub {
+    color: var(--ink-dim);
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="half" id="half-top">
+    <div class="player-label" id="label-top">JUGADOR 2</div>
+    <div class="status-text" id="status-top">Prepárate…</div>
+    <div class="score-dots" id="dots-top"></div>
+  </div>
+
+  <div id="center-bar"><div id="round-badge">RONDA 1</div></div>
+
+  <div class="half" id="half-bottom">
+    <div class="player-label" id="label-bottom">JUGADOR 1</div>
+    <div class="status-text" id="status-bottom">Prepárate…</div>
+    <div class="score-dots" id="dots-bottom"></div>
+  </div>
+
+  <div id="overlay">
+    <h1>Duelo <span class="bolt">Relámpago</span></h1>
+    <p>Apóyense en extremos opuestos del celular. Cuando ambos lados se pongan del color y diga <strong>¡TOCA!</strong>, el más rápido gana la ronda. Tocar antes de tiempo pierde la ronda. Gana quien llegue a <strong>3</strong> rondas.</p>
+    <button class="btn" id="start-btn">Empezar duelo</button>
+    <a class="back-link" href="../">← Más juegos</a>
+  </div>
+
+  <div id="winner-overlay" class="hidden">
+    <div id="winner-title"></div>
+    <div id="winner-sub">Toca para jugar otra vez</div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const halfTop = document.getElementById('half-top');
+  const halfBottom = document.getElementById('half-bottom');
+  const statusTop = document.getElementById('status-top');
+  const statusBottom = document.getElementById('status-bottom');
+  const dotsTop = document.getElementById('dots-top');
+  const dotsBottom = document.getElementById('dots-bottom');
+  const roundBadge = document.getElementById('round-badge');
+  const overlay = document.getElementById('overlay');
+  const startBtn = document.getElementById('start-btn');
+  const winnerOverlay = document.getElementById('winner-overlay');
+  const winnerTitle = document.getElementById('winner-title');
+
+  const WIN_SCORE = 3;
+  let score = { top: 0, bottom: 0 };
+  let state = 'idle'; // idle | waiting | live | done
+  let goTimer = null;
+  let roundNum = 1;
+
+  function renderDots() {
+    dotsTop.innerHTML = '';
+    dotsBottom.innerHTML = '';
+    for (let i = 0; i < WIN_SCORE; i++) {
+      const dt = document.createElement('div');
+      dt.className = 'dot' + (i < score.top ? ' filled-top' : '');
+      dotsTop.appendChild(dt);
+      const db = document.createElement('div');
+      db.className = 'dot' + (i < score.bottom ? ' filled-bottom' : '');
+      dotsBottom.appendChild(db);
+    }
+  }
+
+  function setStatus(text) {
+    statusTop.textContent = text;
+    statusBottom.textContent = text;
+  }
+
+  function resetHalvesColor() {
+    halfTop.classList.remove('go-top', 'early');
+    halfBottom.classList.remove('go-bottom', 'early');
+  }
+
+  function startRound() {
+    state = 'waiting';
+    resetHalvesColor();
+    roundBadge.textContent = 'RONDA ' + roundNum;
+    setStatus('Prepárate…');
+    const delay = 1200 + Math.random() * 2600;
+    goTimer = setTimeout(() => {
+      state = 'live';
+      halfTop.classList.add('go-top');
+      halfBottom.classList.add('go-bottom');
+      setStatus('¡TOCA!');
+    }, delay);
+  }
+
+  function endRound(winnerSide, reason) {
+    clearTimeout(goTimer);
+    state = 'done';
+    score[winnerSide]++;
+    renderDots();
+
+    resetHalvesColor();
+    if (reason === 'early') {
+      if (winnerSide === 'top') halfBottom.classList.add('early');
+      else halfTop.classList.add('early');
+    }
+    const label = winnerSide === 'top' ? 'JUGADOR 2' : 'JUGADOR 1';
+    setStatus(reason === 'early' ? label + ' gana\n(el otro tocó antes)' : label + ' gana la ronda');
+
+    if (score[winnerSide] >= WIN_SCORE) {
+      setTimeout(() => showWinner(winnerSide), 900);
+    } else {
+      roundNum++;
+      setTimeout(startRound, 1300);
+    }
+  }
+
+  function showWinner(side) {
+    const label = side === 'top' ? 'JUGADOR 2' : 'JUGADOR 1';
+    winnerTitle.textContent = label + ' 🏆';
+    winnerTitle.style.color = side === 'top' ? 'var(--p2)' : 'var(--p1)';
+    winnerOverlay.classList.remove('hidden');
+  }
+
+  function handleTap(side) {
+    if (state === 'waiting') {
+      // tocó antes de tiempo
+      endRound(side === 'top' ? 'bottom' : 'top', 'early');
+    } else if (state === 'live') {
+      endRound(side, 'win');
+    }
+  }
+
+  halfTop.addEventListener('pointerdown', () => handleTap('top'));
+  halfBottom.addEventListener('pointerdown', () => handleTap('bottom'));
+
+  startBtn.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    overlay.classList.add('hidden');
+    score = { top: 0, bottom: 0 };
+    roundNum = 1;
+    renderDots();
+    startRound();
+  });
+
+  winnerOverlay.addEventListener('pointerdown', () => {
+    winnerOverlay.classList.add('hidden');
+    score = { top: 0, bottom: 0 };
+    roundNum = 1;
+    renderDots();
+    startRound();
+  });
+
+  // Bloqueo de zoom (también para iOS)
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false });
+  });
+  document.addEventListener('touchmove', function (e) {
+    if (e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('wheel', function (e) {
+    if (e.ctrlKey) e.preventDefault();
+  }, { passive: false });
+
+  renderDots();
+})();
+</script>
+</body>
+</html>
