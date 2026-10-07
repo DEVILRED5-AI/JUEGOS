@@ -23,7 +23,7 @@
   html, body {
     height: 100%;
     margin: 0;
-    background: var(--bg);
+    background: transparent;
     color: var(--ink);
     font-family: 'Inter', sans-serif;
     overflow: hidden;
@@ -32,6 +32,12 @@
     -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+  }
+  /* Fondo de la página: mitad de cada jugador, para que cualquier borde del iPhone se mezcle con los colores */
+  html {
+    height: 100%;
+    height: -webkit-fill-available;
+    background: linear-gradient(to bottom, var(--p2-dim) 50%, var(--p1-dim) 50%);
   }
   #app {
     position: fixed;
@@ -358,6 +364,17 @@
   document.addEventListener('wheel', function (e) {
     if (e.ctrlKey) e.preventDefault();
   }, { passive: false });
+
+  // Pantalla completa al empezar (oculta las barras del sistema)
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('a')) return;
+    var el = document.documentElement;
+    if (document.fullscreenElement || !el.requestFullscreen) return;
+    try {
+      var p = el.requestFullscreen({ navigationUI: 'hide' });
+      if (p && p.catch) p.catch(function () {});
+    } catch (err) {}
+  });
 
   renderDots();
 })();
