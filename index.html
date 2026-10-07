@@ -61,7 +61,7 @@
     position: fixed;
     inset: 0;
     z-index: 50;
-    background: radial-gradient(120% 80% at 50% 40%, #1b1630 0%, var(--bg) 62%);
+    background: radial-gradient(60% 40% at 50% 42%, rgba(255,120,60,.12), transparent 70%), #000;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -92,12 +92,18 @@
     width: 92px;
     height: 92px;
     border-radius: 28px;
-    background: linear-gradient(145deg, #ffd978, var(--orange));
+    background: #000;
+    border: 1.5px solid rgba(255,190,110,.35);
     display: grid;
     place-items: center;
-    box-shadow: 0 18px 50px -12px rgba(255,150,60,.65);
+    box-shadow: 0 0 46px -8px rgba(255,120,60,.6), inset 0 0 24px rgba(255,120,60,.12);
   }
-  .logo svg { width: 46px; height: 46px; fill: #1a1100; animation: bolt .6s ease .7s both; }
+  .logo svg {
+    width: 62px;
+    height: 52px;
+    filter: drop-shadow(0 0 7px rgba(255,140,60,.75));
+    animation: bolt .6s ease .7s both;
+  }
   @keyframes pop { from { opacity: 0; transform: scale(.4) rotate(-12deg); } to { opacity: 1; transform: none; } }
   @keyframes ring { 0% { opacity: .7; transform: scale(1); } 100% { opacity: 0; transform: scale(1.7); } }
   @keyframes bolt { from { opacity: 0; transform: scale(.5); } 60% { transform: scale(1.18); } to { opacity: 1; transform: scale(1); } }
@@ -169,11 +175,13 @@
   }
   .brand { display: flex; align-items: center; gap: 10px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 17px; }
   .brand-tile {
-    width: 32px; height: 32px; border-radius: 10px;
-    background: linear-gradient(145deg, #ffd978, var(--orange));
+    width: 38px; height: 38px; border-radius: 12px;
+    background: #000;
+    border: 1px solid rgba(255,190,110,.35);
     display: grid; place-items: center;
+    box-shadow: 0 0 16px -4px rgba(255,120,60,.6);
   }
-  .brand-tile svg { width: 17px; height: 17px; fill: #1a1100; }
+  .brand-tile svg { width: 26px; height: 22px; filter: drop-shadow(0 0 3px rgba(255,140,60,.7)); }
   .pill {
     font-size: 12px;
     color: var(--dim);
@@ -289,13 +297,32 @@
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="neon" gradientUnits="userSpaceOnUse" x1="4" y1="20" x2="60" y2="54">
+      <stop offset="0" stop-color="#ffd978"/>
+      <stop offset=".55" stop-color="#ff8a3d"/>
+      <stop offset="1" stop-color="#ff4d8d"/>
+    </linearGradient>
+    <symbol id="gamepad" viewBox="0 10 64 54">
+      <path d="M20 20H44C51 20 55 24 57 32L60 44C61.5 50 58 54 53 54C50 54 48 52.5 46 50L43.5 47C42.5 46 41.3 45.5 40 45.5H24C22.7 45.5 21.5 46 20.5 47L18 50C16 52.5 14 54 11 54C6 54 2.5 50 4 44L7 32C9 24 13 20 20 20Z"
+            fill="none" stroke="url(#neon)" stroke-width="3.5" stroke-linejoin="round"/>
+      <rect x="14" y="30" width="12" height="5" rx="1.2" fill="url(#neon)"/>
+      <rect x="17.5" y="26.5" width="5" height="12" rx="1.2" fill="url(#neon)"/>
+      <circle cx="47" cy="28.5" r="2.2" fill="url(#neon)"/>
+      <circle cx="47" cy="36.5" r="2.2" fill="url(#neon)"/>
+      <circle cx="43" cy="32.5" r="2.2" fill="url(#neon)"/>
+      <circle cx="51" cy="32.5" r="2.2" fill="url(#neon)"/>
+    </symbol>
+  </defs>
+</svg>
 <div class="orb a"></div>
 <div class="orb b"></div>
 
 <div id="splash">
   <div class="logo">
     <div class="logo-tile">
-      <svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
+      <svg viewBox="0 0 64 54"><use href="#gamepad" width="64" height="54"/></svg>
     </div>
   </div>
   <div class="splash-title" id="splash-title" aria-label="Mis Juegos"></div>
@@ -306,7 +333,7 @@
 <div class="app" id="app">
   <div class="topbar fade" style="--i:0">
     <div class="brand">
-      <div class="brand-tile"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></div>
+      <div class="brand-tile"><svg viewBox="0 0 64 54"><use href="#gamepad" width="64" height="54"/></svg></div>
       Mis Juegos
     </div>
     <div class="pill" id="contador"></div>
