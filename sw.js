@@ -1,6 +1,6 @@
 // Service worker de "Mis Juegos": permite instalar la app y jugar sin internet.
 // Si cambias archivos importantes, sube el número de VERSION para forzar la actualización.
-const VERSION = 'v5';
+const VERSION = 'v6';
 const CACHE = 'mis-juegos-' + VERSION;
 
 // Archivos base que se guardan al instalar

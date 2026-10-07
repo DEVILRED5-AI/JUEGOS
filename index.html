@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" style="background-color:#0b0b10">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -66,7 +66,11 @@
     position: fixed;
     inset: 0;
     z-index: 50;
-    background: radial-gradient(60% 40% at 50% 42%, rgba(255,120,60,.12), transparent 70%), #000;
+    /* Mismo fondo que la app (luces en las esquinas), sin foco en el centro ni negro total */
+    background:
+      radial-gradient(75% 48% at 100% 0%, rgba(255,138,61,.32), transparent 72%),
+      radial-gradient(75% 48% at 0% 100%, rgba(106,92,255,.36), transparent 72%),
+      #0b0b10;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -83,17 +87,8 @@
     height: 92px;
     animation: pop .9s cubic-bezier(.2,.9,.3,1.25) both;
   }
-  .logo::before, .logo::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 28px;
-    border: 2px solid var(--gold);
-    opacity: 0;
-    animation: ring 2s ease-out .5s infinite;
-  }
-  .logo::after { animation-delay: 1.1s; }
   .logo-tile {
+    animation: glow 2.4s ease-in-out 1s infinite;
     width: 92px;
     height: 92px;
     border-radius: 28px;
@@ -110,7 +105,7 @@
     animation: bolt .6s ease .7s both;
   }
   @keyframes pop { from { opacity: 0; transform: scale(.4) rotate(-12deg); } to { opacity: 1; transform: none; } }
-  @keyframes ring { 0% { opacity: .7; transform: scale(1); } 100% { opacity: 0; transform: scale(1.7); } }
+  @keyframes glow { 50% { box-shadow: 0 0 62px -6px rgba(255,120,60,.85), inset 0 0 26px rgba(255,120,60,.2); } }
   @keyframes bolt { from { opacity: 0; transform: scale(.5); } 60% { transform: scale(1.18); } to { opacity: 1; transform: scale(1); } }
 
   .splash-title {
