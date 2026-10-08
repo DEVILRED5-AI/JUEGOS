@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" style="background-color:#0e0e12">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -29,6 +29,7 @@
     height: 100%;
     height: 100vh;
     height: 100dvh;
+    min-height: 100lvh;
     margin: 0;
     padding: 0;
     background: var(--bg);
@@ -288,6 +289,17 @@
   let canRestart = false;
   let roundNum = 1;
 
+  // Pantalla completa (oculta las barras del sistema donde el navegador lo permite).
+  // Debe llamarse desde un toque del usuario; se pierde al cambiar de página.
+  function entrarPantallaCompleta() {
+    const el = document.documentElement;
+    if (document.fullscreenElement || !el.requestFullscreen) return;
+    try {
+      const p = el.requestFullscreen({ navigationUI: 'hide' });
+      if (p && p.catch) p.catch(function () {});
+    } catch (e) {}
+  }
+
   function renderDots() {
     dotsTop.innerHTML = '';
     dotsBottom.innerHTML = '';
@@ -402,12 +414,14 @@
 
   startBtn.addEventListener('pointerdown', (e) => {
     e.stopPropagation();
+    entrarPantallaCompleta();
     overlay.classList.add('hidden');
     resetGame();
   });
 
   winnerOverlay.addEventListener('pointerdown', () => {
     if (!canRestart) return;
+    entrarPantallaCompleta();
     winnerOverlay.classList.add('hidden');
     resetGame();
   });
