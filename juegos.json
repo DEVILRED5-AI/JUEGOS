@@ -1,0 +1,11 @@
+[
+  {
+    "nombre": "Duelo Relámpago",
+    "desc": "Reflejos para dos en el mismo celular. ¡Toca primero cuando se ilumine!",
+    "ruta": "duelo-relampago/",
+    "emoji": "⚡",
+    "tag": "2 jugadores",
+    "c1": "#ffcf5c",
+    "c2": "#ff8a3d"
+  }
+]

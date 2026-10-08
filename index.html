@@ -287,6 +287,108 @@
   .soon .t { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; color: var(--ink); opacity: .8; }
   .soon .s { font-size: 12px; }
 
+  /* ---------- Agregar juego / ajustes ---------- */
+  .right { display: flex; align-items: center; gap: 8px; }
+  .gear {
+    width: 34px; height: 34px; padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.04);
+    color: var(--dim);
+    font-size: 18px; line-height: 1;
+    display: grid; place-items: center;
+    cursor: pointer;
+  }
+  .gear:active { transform: scale(.92); }
+  .card.pending { filter: saturate(.4) brightness(.85); }
+  .add { pointer-events: auto; cursor: pointer; }
+  .add:active { transform: scale(.96) !important; border-color: var(--gold); }
+
+  .scrim { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.55); opacity: 0; transition: opacity .22s ease; }
+  .scrim.on { opacity: 1; }
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 70;
+    max-width: 520px; margin: 0 auto; max-height: 92vh; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--surface);
+    border: 1px solid var(--line); border-bottom: 0;
+    border-radius: 26px 26px 0 0;
+    padding: 10px 20px calc(env(safe-area-inset-bottom, 0px) + 22px);
+    transform: translateY(100%);
+    transition: transform .26s cubic-bezier(.2,.8,.2,1);
+  }
+  .sheet.on { transform: none; }
+  .sheet[hidden], .scrim[hidden] { display: none; }
+  .grab { width: 42px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.18); margin: 4px auto 14px; }
+  .sheet h2 { font-family: 'Space Grotesk', sans-serif; font-size: 22px; margin: 0 0 4px; }
+  .sheet .lead { color: var(--dim); font-size: 13.5px; line-height: 1.5; margin: 0 0 16px; }
+  .sheet label { display: block; font-size: 12.5px; color: var(--dim); margin: 0 0 12px; }
+  .sheet input[type=text], .sheet input[type=password], .sheet textarea {
+    display: block; width: 100%; margin-top: 6px; padding: 12px 14px;
+    border-radius: 14px; border: 1px solid var(--line);
+    background: rgba(255,255,255,.05); color: var(--ink);
+    font: 500 16px 'Inter', system-ui, sans-serif;
+    -webkit-user-select: text; user-select: text;
+    -webkit-appearance: none; appearance: none; outline: none;
+  }
+  .sheet textarea { resize: none; }
+  .sheet input:focus, .sheet textarea:focus { border-color: var(--gold); }
+  .row { display: flex; gap: 10px; }
+  .row > label { flex: 1; }
+  .row > label.emoji { flex: 0 0 84px; }
+  .row > label.emoji input { text-align: center; font-size: 22px; padding: 8px; }
+  .filebtn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 16px; margin: 0 0 14px; border-radius: 16px;
+    border: 1.5px dashed rgba(255,255,255,.22); color: var(--ink);
+    font-size: 15px; font-weight: 600; cursor: pointer; text-align: center;
+  }
+  .filebtn.ok { border-color: #7be0a0; color: #7be0a0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 14px; }
+  .chip {
+    padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line);
+    background: rgba(255,255,255,.04); color: var(--ink);
+    font: 600 13px 'Inter', system-ui, sans-serif; cursor: pointer;
+  }
+  .chip.on { border-color: var(--gold); background: rgba(255,207,92,.12); }
+  .sw {
+    width: 34px; height: 34px; padding: 0; border-radius: 50%;
+    border: 2px solid transparent; cursor: pointer;
+    background: linear-gradient(145deg, var(--c1), var(--c2));
+  }
+  .sw.on { border-color: #fff; }
+  .lbl { font-size: 12.5px; color: var(--dim); margin: 0; }
+  .check { display: flex !important; align-items: center; gap: 10px; color: var(--ink) !important; font-size: 14px !important; }
+  .check input { width: 20px; height: 20px; accent-color: var(--gold); flex: none; }
+  .hint { font-size: 12.5px; color: var(--dim); margin: 0 0 8px; word-break: break-all; }
+  .msg { min-height: 20px; font-size: 13.5px; line-height: 1.4; margin: 4px 0 12px; }
+  .msg.err { color: #ff7a8a; }
+  .msg.ok { color: #7be0a0; }
+  .primary {
+    width: 100%; padding: 15px; border: 0; border-radius: 15px; cursor: pointer;
+    font: 700 17px 'Space Grotesk', sans-serif; color: #1a1400;
+    background: linear-gradient(145deg, var(--gold), var(--orange));
+  }
+  .primary:active { transform: scale(.98); }
+  .primary:disabled { opacity: .5; }
+  .ghost {
+    width: 100%; margin-top: 10px; padding: 13px; border-radius: 15px; cursor: pointer;
+    border: 1px solid var(--line); background: transparent; color: var(--dim);
+    font: 600 15px 'Inter', system-ui, sans-serif;
+  }
+  .steps { color: var(--dim); font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; padding-left: 20px; }
+  .steps a { color: var(--gold); }
+  .steps b { color: var(--ink); font-weight: 600; }
+  .toast {
+    position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+    transform: translate(-50%, 20px); z-index: 80;
+    max-width: min(92vw, 420px); padding: 12px 16px; border-radius: 14px;
+    background: #262631; color: var(--ink); border: 1px solid var(--line);
+    font-size: 14px; line-height: 1.4; text-align: center;
+    opacity: 0; pointer-events: none; transition: opacity .22s ease, transform .22s ease;
+  }
+  .toast.on { opacity: 1; transform: translate(-50%, 0); }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: .01ms !important;
@@ -336,7 +438,10 @@
       <div class="brand-tile"><svg viewBox="0 0 64 54"><use href="#gamepad" width="64" height="54"/></svg></div>
       Mis Juegos
     </div>
-    <div class="pill" id="contador"></div>
+    <div class="right">
+      <div class="pill" id="contador"></div>
+      <button type="button" class="gear" id="btn-ajustes" aria-label="Conexión con GitHub">⚙︎</button>
+    </div>
   </div>
 
   <h1 class="fade" style="--i:1">¿A qué <span>jugamos</span> hoy?</h1>
@@ -345,13 +450,77 @@
   <div class="grid" id="lista"></div>
 </div>
 
+<div class="scrim" id="scrim" hidden></div>
+
+<section class="sheet" id="sheet-add" role="dialog" aria-modal="true" aria-labelledby="t-add" hidden>
+  <div class="grab"></div>
+  <h2 id="t-add">Agregar juego</h2>
+  <p class="lead">Elige el archivo .html del juego. Se publica en tu repositorio de GitHub y aparece en el menú.</p>
+
+  <label class="filebtn" id="f-filebtn">
+    <input type="file" id="f-file" accept=".html,.htm,text/html" hidden>
+    <span id="f-filename">📄 Elegir archivo .html</span>
+  </label>
+
+  <label>Nombre del juego
+    <input type="text" id="f-nombre" maxlength="30" placeholder="Ej: Snake" autocomplete="off" autocapitalize="sentences">
+  </label>
+  <p class="hint" id="f-slug"></p>
+
+  <div class="row">
+    <label class="emoji">Emoji
+      <input type="text" id="f-emoji" maxlength="4" value="🎮" autocomplete="off">
+    </label>
+    <label>Descripción corta
+      <input type="text" id="f-desc" maxlength="90" placeholder="De qué trata el juego" autocomplete="off">
+    </label>
+  </div>
+
+  <p class="lbl">Jugadores</p>
+  <div class="chips" id="f-tags"></div>
+  <p class="lbl">Color de la tarjeta</p>
+  <div class="chips" id="f-colors"></div>
+
+  <label class="check"><input type="checkbox" id="f-back" checked> Añadir un botón "‹ Menú" dentro del juego</label>
+
+  <p class="msg" id="f-msg" role="status"></p>
+  <button type="button" class="primary" id="f-go">Publicar en GitHub</button>
+  <button type="button" class="ghost" id="f-cancel">Cancelar</button>
+</section>
+
+<section class="sheet" id="sheet-cfg" role="dialog" aria-modal="true" aria-labelledby="t-cfg" hidden>
+  <div class="grab"></div>
+  <h2 id="t-cfg">Conexión con GitHub</h2>
+  <p class="lead">Para publicar juegos la app necesita un token con permiso solo sobre el repositorio <b id="c-repo"></b>. Se guarda únicamente en este dispositivo.</p>
+  <ol class="steps">
+    <li>Abre <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
+    <li>Ponle un nombre (<b>Mis Juegos</b>) y una fecha de vencimiento.</li>
+    <li><b>Repository access</b> → <b>Only select repositories</b> → elige <b>JUEGOS</b>.</li>
+    <li><b>Permissions</b> → <b>Repository permissions</b> → <b>Contents</b> → <b>Read and write</b>.</li>
+    <li>Pulsa <b>Generate token</b>, cópialo y pégalo aquí.</li>
+  </ol>
+  <label>Token
+    <input type="password" id="c-token" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+  </label>
+  <p class="msg" id="c-msg" role="status"></p>
+  <button type="button" class="primary" id="c-save">Guardar y probar</button>
+  <button type="button" class="ghost" id="c-clear">Quitar token de este dispositivo</button>
+  <button type="button" class="ghost" id="c-close">Cerrar</button>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 <script>
-// ➜ Para agregar un juego nuevo: crea su carpeta con su index.html
-//    y añade UNA línea aquí. Los colores (c1, c2) son opcionales.
-const JUEGOS = [
-  { nombre: 'Duelo Relámpago', desc: 'Reflejos para dos en el mismo celular. ¡Toca primero cuando se ilumine!', ruta: 'duelo-relampago/', emoji: '⚡', tag: '2 jugadores', c1: '#ffcf5c', c2: '#ff8a3d' },
-  // { nombre: 'Otro juego', desc: 'Descripción corta.', ruta: 'otro-juego/', emoji: '🎮', tag: '1 jugador', c1: '#00d9c0', c2: '#2b8cff' },
+// ➜ La lista de juegos vive en juegos.json y se actualiza sola con el botón "Agregar juego".
+//    Esta lista es solo el respaldo por si no se puede leer juegos.json.
+var JUEGOS_BASE = [
+  { nombre: 'Duelo Relámpago', desc: 'Reflejos para dos en el mismo celular. ¡Toca primero cuando se ilumine!', ruta: 'duelo-relampago/', emoji: '⚡', tag: '2 jugadores', c1: '#ffcf5c', c2: '#ff8a3d' }
 ];
+var GH = { owner: 'DEVILRED5-AI', repo: 'JUEGOS' };
+var JUEGOS = JUEGOS_BASE.slice();
+var pendientes = {}; // ruta -> entrada, mientras GitHub Pages termina de publicar
+
+function $(id) { return document.getElementById(id); }
 
 /* ---------- Bloqueo de zoom (también para iOS) ---------- */
 ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) {
@@ -363,65 +532,419 @@ document.addEventListener('touchmove', function (e) {
 var ultimoToque = 0;
 document.addEventListener('touchend', function (e) {
   var ahora = Date.now();
-  if (ahora - ultimoToque <= 300) e.preventDefault();
+  var enHoja = e.target.closest && e.target.closest('.sheet');
+  if (!enHoja && ahora - ultimoToque <= 300) e.preventDefault();
   ultimoToque = ahora;
 }, { passive: false });
 document.addEventListener('wheel', function (e) {
   if (e.ctrlKey) e.preventDefault();
 }, { passive: false });
 
-/* ---------- Tarjetas ---------- */
-var lista = document.getElementById('lista');
-JUEGOS.forEach(function (j, i) {
-  var a = document.createElement('a');
-  a.className = 'card';
-  a.href = j.ruta;
-  a.style.setProperty('--i', i + 3);
-  if (j.c1) a.style.setProperty('--c1', j.c1);
-  if (j.c2) a.style.setProperty('--c2', j.c2);
+/* ---------- Avisos y hojas ---------- */
+var toastT;
+function toast(texto) {
+  var el = $('toast');
+  el.textContent = texto;
+  el.classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(function () { el.classList.remove('on'); }, 4200);
+}
 
-  var icon = document.createElement('div');
-  icon.className = 'icon';
-  icon.textContent = j.emoji;
+var scrim = $('scrim');
+var hojaAbierta = null;
+function abrirHoja(h) {
+  if (hojaAbierta === h) return;
+  cerrarHoja();
+  clearTimeout(h._t);
+  hojaAbierta = h;
+  scrim.hidden = false;
+  h.hidden = false;
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () { scrim.classList.add('on'); h.classList.add('on'); });
+  });
+}
+function cerrarHoja() {
+  var h = hojaAbierta;
+  if (!h) return;
+  hojaAbierta = null;
+  scrim.classList.remove('on');
+  h.classList.remove('on');
+  h._t = setTimeout(function () {
+    h.hidden = true;
+    if (!hojaAbierta) scrim.hidden = true;
+  }, 240);
+}
+scrim.addEventListener('click', cerrarHoja);
 
-  var n = document.createElement('div');
-  n.className = 'name';
-  n.textContent = j.nombre;
+/* ---------- Lista de juegos ---------- */
+function juegoValido(j) {
+  return j && typeof j.nombre === 'string' && typeof j.ruta === 'string' && /^[a-z0-9][a-z0-9-]*\/$/.test(j.ruta);
+}
+function colorValido(c) { return typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c); }
 
-  var d = document.createElement('div');
-  d.className = 'desc';
-  d.textContent = j.desc;
+var lista = $('lista');
+function renderLista() {
+  lista.innerHTML = '';
+  JUEGOS.forEach(function (j, i) {
+    var pend = !!pendientes[j.ruta];
+    var a = document.createElement('a');
+    a.className = 'card' + (pend ? ' pending' : '');
+    a.href = j.ruta;
+    a.style.setProperty('--i', i + 3);
+    if (colorValido(j.c1)) a.style.setProperty('--c1', j.c1);
+    if (colorValido(j.c2)) a.style.setProperty('--c2', j.c2);
 
-  var foot = document.createElement('div');
-  foot.className = 'foot';
-  var tag = document.createElement('span');
-  tag.className = 'tag';
-  tag.textContent = j.tag || '';
-  var go = document.createElement('span');
-  go.className = 'go';
-  go.textContent = '›';
-  foot.append(tag, go);
+    var icon = document.createElement('div');
+    icon.className = 'icon';
+    icon.textContent = j.emoji || '🎮';
 
-  a.append(icon, n, d, foot);
+    var n = document.createElement('div');
+    n.className = 'name';
+    n.textContent = j.nombre;
 
-  a.addEventListener('click', function (e) {
-    e.preventDefault();
-    document.body.classList.add('leaving');
-    setTimeout(function () { window.location.href = a.href; }, 200);
+    var d = document.createElement('div');
+    d.className = 'desc';
+    d.textContent = j.desc || '';
+
+    var foot = document.createElement('div');
+    foot.className = 'foot';
+    var tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.textContent = pend ? 'Publicando…' : (j.tag || '');
+    var go = document.createElement('span');
+    go.className = 'go';
+    go.textContent = '›';
+    foot.append(tag, go);
+
+    a.append(icon, n, d, foot);
+
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (pendientes[j.ruta]) { toast('Se está publicando. Prueba de nuevo en un minuto.'); return; }
+      document.body.classList.add('leaving');
+      setTimeout(function () { window.location.href = a.href; }, 200);
+    });
+
+    lista.append(a);
   });
 
-  lista.append(a);
+  // Tarjeta "Agregar juego"
+  var add = document.createElement('div');
+  add.className = 'card soon add';
+  add.setAttribute('role', 'button');
+  add.tabIndex = 0;
+  add.style.setProperty('--i', JUEGOS.length + 3);
+  add.innerHTML = '<div class="plus">＋</div><div class="t">Agregar juego</div><div class="s">Desde un archivo .html</div>';
+  add.addEventListener('click', abrirAgregar);
+  add.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirAgregar(); } });
+  lista.append(add);
+
+  $('contador').textContent = JUEGOS.length + (JUEGOS.length === 1 ? ' juego' : ' juegos');
+}
+
+function cargarLista() {
+  return fetch('juegos.json?v=' + Date.now(), { cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); })
+    .then(function (datos) {
+      if (!Array.isArray(datos)) return;
+      var nueva = datos.filter(juegoValido);
+      if (!nueva.length) return;
+      // Conserva los que aún se están publicando
+      Object.keys(pendientes).forEach(function (ruta) {
+        if (!nueva.some(function (j) { return j.ruta === ruta; })) nueva.push(pendientes[ruta]);
+        else delete pendientes[ruta];
+      });
+      JUEGOS = nueva;
+    })
+    .catch(function () {})
+    .then(renderLista);
+}
+
+/* ---------- GitHub ---------- */
+function leerToken() { try { return localStorage.getItem('ghToken') || ''; } catch (e) { return ''; } }
+function guardarToken(t) {
+  try { if (t) localStorage.setItem('ghToken', t); else localStorage.removeItem('ghToken'); return true; }
+  catch (e) { return false; }
+}
+
+function GhError(tipo, status, detalle) { this.tipo = tipo; this.status = status || 0; this.detalle = detalle || ''; }
+
+async function gh(metodo, ruta, cuerpo) {
+  var token = leerToken();
+  if (!token) throw new GhError('sin-token');
+  var opciones = {
+    method: metodo,
+    cache: 'no-store',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    }
+  };
+  if (cuerpo) { opciones.headers['Content-Type'] = 'application/json'; opciones.body = JSON.stringify(cuerpo); }
+  var r;
+  try { r = await fetch('https://api.github.com/repos/' + GH.owner + '/' + GH.repo + ruta, opciones); }
+  catch (e) { throw new GhError('offline'); }
+  var datos = {};
+  try { datos = await r.json(); } catch (e) {}
+  if (!r.ok) throw new GhError('http', r.status, datos && datos.message);
+  return datos;
+}
+
+function textoError(e) {
+  if (!(e instanceof GhError)) return 'Ocurrió un error inesperado: ' + (e && e.message ? e.message : e);
+  if (e.tipo === 'sin-token') return 'Primero guarda tu token en ⚙︎.';
+  if (e.tipo === 'offline') return 'No hay conexión con GitHub. Revisa tu internet.';
+  if (e.status === 401) return 'El token no es válido o ya venció. Crea uno nuevo en ⚙︎.';
+  if (e.status === 403) return 'El token no tiene permiso de escritura (Contents: Read and write) o GitHub limitó las peticiones. Revisa el token en ⚙︎.';
+  if (e.status === 404) return 'No encuentro el repositorio ' + GH.owner + '/' + GH.repo + ' o el token no tiene acceso a él.';
+  if (e.status === 409 || e.status === 422) return 'Hubo un conflicto al guardar. Intenta de nuevo.';
+  return 'GitHub respondió con error ' + e.status + (e.detalle ? ' (' + e.detalle + ')' : '') + '.';
+}
+
+function aB64(texto) {
+  var bytes = new TextEncoder().encode(texto), bin = '', paso = 0x8000;
+  for (var i = 0; i < bytes.length; i += paso) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + paso));
+  return btoa(bin);
+}
+function deB64(b64) {
+  var bin = atob(String(b64).replace(/\s/g, '')), bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+/* ---------- Ajustes (token) ---------- */
+var hojaCfg = $('sheet-cfg'), hojaAdd = $('sheet-add');
+$('c-repo').textContent = GH.owner + '/' + GH.repo;
+
+function msg(el, texto, tipo) {
+  el.textContent = texto || '';
+  el.className = 'msg' + (tipo ? ' ' + tipo : '');
+}
+function abrirAjustes(aviso) {
+  $('c-token').value = '';
+  var m = $('c-msg');
+  if (aviso) msg(m, aviso, 'err');
+  else msg(m, leerToken() ? 'Hay un token guardado en este dispositivo.' : '', leerToken() ? 'ok' : '');
+  abrirHoja(hojaCfg);
+}
+$('btn-ajustes').addEventListener('click', function () { abrirAjustes(); });
+$('c-close').addEventListener('click', cerrarHoja);
+$('c-clear').addEventListener('click', function () {
+  guardarToken('');
+  $('c-token').value = '';
+  msg($('c-msg'), 'Token eliminado de este dispositivo.', 'ok');
+});
+$('c-save').addEventListener('click', async function () {
+  var boton = this, m = $('c-msg');
+  var nuevo = $('c-token').value.trim();
+  if (nuevo) {
+    if (!/^[A-Za-z0-9_\-]{20,}$/.test(nuevo)) { msg(m, 'Ese texto no parece un token. Cópialo completo desde GitHub.', 'err'); return; }
+    if (!guardarToken(nuevo)) { msg(m, 'No pude guardar el token en este navegador.', 'err'); return; }
+  } else if (!leerToken()) {
+    msg(m, 'Pega tu token primero.', 'err'); return;
+  }
+  boton.disabled = true;
+  msg(m, 'Probando la conexión…');
+  try {
+    var repo = await gh('GET', '');
+    if (repo.permissions && repo.permissions.push === false) {
+      msg(m, 'Conecta, pero el token solo puede leer. Necesita Contents: Read and write.', 'err');
+    } else {
+      msg(m, '¡Conectado con ' + GH.owner + '/' + GH.repo + '! Ya puedes agregar juegos.', 'ok');
+    }
+    $('c-token').value = '';
+  } catch (e) {
+    msg(m, textoError(e), 'err');
+  }
+  boton.disabled = false;
 });
 
-// Tarjeta "Próximamente"
-var soon = document.createElement('div');
-soon.className = 'card soon';
-soon.style.setProperty('--i', JUEGOS.length + 3);
-soon.innerHTML = '<div class="plus">＋</div><div class="t">Próximamente</div><div class="s">Más juegos en camino</div>';
-lista.append(soon);
+/* ---------- Agregar juego ---------- */
+var TAGS = ['1 jugador', '2 jugadores', 'Multijugador'];
+var COLORES = [['#ffcf5c', '#ff8a3d'], ['#00d9c0', '#2b8cff'], ['#ff5876', '#a64dff'], ['#7be07b', '#1fa75a'], ['#6ec1ff', '#6a5cff']];
+var tagSel = 0, colorSel = 0, archivo = null;
 
-document.getElementById('contador').textContent =
-  JUEGOS.length + (JUEGOS.length === 1 ? ' juego' : ' juegos');
+function pintarChips() {
+  var t = $('f-tags');
+  t.innerHTML = '';
+  TAGS.forEach(function (txt, i) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip' + (i === tagSel ? ' on' : '');
+    b.textContent = txt;
+    b.addEventListener('click', function () { tagSel = i; pintarChips(); });
+    t.append(b);
+  });
+  var c = $('f-colors');
+  c.innerHTML = '';
+  COLORES.forEach(function (par, i) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'sw' + (i === colorSel ? ' on' : '');
+    b.setAttribute('aria-label', 'Color ' + (i + 1));
+    b.style.setProperty('--c1', par[0]);
+    b.style.setProperty('--c2', par[1]);
+    b.addEventListener('click', function () { colorSel = i; pintarChips(); });
+    c.append(b);
+  });
+}
+
+function hacerSlug(s) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40).replace(/-+$/, '');
+}
+function actualizarSlug() {
+  var s = hacerSlug($('f-nombre').value);
+  var h = $('f-slug');
+  if (!s) { h.textContent = ''; return; }
+  var existe = JUEGOS.some(function (j) { return j.ruta === s + '/'; });
+  h.textContent = 'Carpeta: ' + s + '/' + (existe ? ' — ya existe, se reemplazará su archivo.' : '');
+}
+$('f-nombre').addEventListener('input', actualizarSlug);
+
+$('f-file').addEventListener('change', function () {
+  archivo = this.files && this.files[0] ? this.files[0] : null;
+  var b = $('f-filebtn');
+  if (archivo) {
+    $('f-filename').textContent = '✅ ' + archivo.name;
+    b.classList.add('ok');
+    if (!$('f-nombre').value) {
+      var base = archivo.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim();
+      $('f-nombre').value = base.charAt(0).toUpperCase() + base.slice(1);
+      actualizarSlug();
+    }
+  } else {
+    $('f-filename').textContent = '📄 Elegir archivo .html';
+    b.classList.remove('ok');
+  }
+});
+
+function abrirAgregar() {
+  if (!leerToken()) { abrirAjustes('Primero conecta tu cuenta: pega tu token de GitHub.'); return; }
+  msg($('f-msg'), '');
+  pintarChips();
+  actualizarSlug();
+  abrirHoja(hojaAdd);
+}
+$('f-cancel').addEventListener('click', cerrarHoja);
+
+function inyectarVolver(html) {
+  if (/data-volver-menu/.test(html)) return html;
+  var boton = '<a data-volver-menu href="../" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;z-index:2147483647;' +
+    'padding:7px 13px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:600 13px/1 system-ui,sans-serif;' +
+    'text-decoration:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)">‹ Menú</a>\n';
+  var i = html.toLowerCase().lastIndexOf('</body>');
+  return i >= 0 ? html.slice(0, i) + boton + html.slice(i) : html + '\n' + boton;
+}
+
+async function leerSha(ruta, rama) {
+  try {
+    var f = await gh('GET', '/contents/' + ruta + '?ref=' + encodeURIComponent(rama));
+    return f;
+  } catch (e) {
+    if (e instanceof GhError && e.status === 404) return null;
+    throw e;
+  }
+}
+
+async function actualizarListaRemota(rama, entrada) {
+  for (var intento = 0; intento < 2; intento++) {
+    var f = await leerSha('juegos.json', rama);
+    var actual = null;
+    if (f && f.content) {
+      try { actual = JSON.parse(deB64(f.content)); } catch (e) { actual = null; }
+    }
+    if (!Array.isArray(actual)) {
+      actual = JUEGOS.filter(function (j) { return !pendientes[j.ruta]; });
+      if (!actual.length) actual = JUEGOS_BASE.slice();
+    }
+    actual = actual.filter(juegoValido);
+    var idx = -1;
+    actual.forEach(function (j, i) { if (j.ruta === entrada.ruta) idx = i; });
+    if (idx >= 0) actual[idx] = Object.assign({}, actual[idx], entrada);
+    else actual.push(entrada);
+    try {
+      await gh('PUT', '/contents/juegos.json', {
+        message: 'Actualizar lista de juegos: ' + entrada.nombre,
+        content: aB64(JSON.stringify(actual, null, 2) + '\n'),
+        branch: rama,
+        sha: f ? f.sha : undefined
+      });
+      return actual;
+    } catch (e) {
+      if (intento === 0 && e instanceof GhError && (e.status === 409 || e.status === 422)) continue;
+      throw e;
+    }
+  }
+}
+
+$('f-go').addEventListener('click', async function () {
+  var boton = this, m = $('f-msg');
+  var nombre = $('f-nombre').value.trim();
+  var slug = hacerSlug(nombre);
+  if (!archivo) { msg(m, 'Elige primero el archivo .html del juego.', 'err'); return; }
+  if (!nombre || !slug) { msg(m, 'Escribe un nombre para el juego (con letras o números).', 'err'); return; }
+  if (archivo.size > 5 * 1024 * 1024) { msg(m, 'El archivo pesa más de 5 MB. Es demasiado para este método.', 'err'); return; }
+
+  boton.disabled = true;
+  try {
+    var html = await archivo.text();
+    if (!/<(html|body|script|canvas|div)\b/i.test(html)) throw new Error('El archivo no parece un HTML de juego.');
+    if ($('f-back').checked) html = inyectarVolver(html);
+
+    var entrada = {
+      nombre: nombre,
+      desc: $('f-desc').value.trim().slice(0, 90),
+      ruta: slug + '/',
+      emoji: ($('f-emoji').value.trim() || '🎮').slice(0, 4),
+      tag: TAGS[tagSel],
+      c1: COLORES[colorSel][0],
+      c2: COLORES[colorSel][1]
+    };
+
+    msg(m, 'Conectando con GitHub…');
+    var repo = await gh('GET', '');
+    var rama = repo.default_branch || 'main';
+
+    msg(m, 'Subiendo el juego…');
+    var ruta = slug + '/index.html';
+    var previo = await leerSha(ruta, rama);
+    await gh('PUT', '/contents/' + ruta, {
+      message: (previo ? 'Actualizar juego: ' : 'Agregar juego: ') + nombre,
+      content: aB64(html),
+      branch: rama,
+      sha: previo ? previo.sha : undefined
+    });
+
+    msg(m, 'Actualizando la lista…');
+    var existia = JUEGOS.some(function (j) { return j.ruta === entrada.ruta; });
+    var nuevaLista = await actualizarListaRemota(rama, entrada);
+
+    JUEGOS = nuevaLista;
+    if (!existia) {
+      pendientes[entrada.ruta] = entrada;
+      setTimeout(function () { delete pendientes[entrada.ruta]; cargarLista(); }, 75000);
+    }
+    renderLista();
+
+    archivo = null;
+    $('f-file').value = '';
+    $('f-filename').textContent = '📄 Elegir archivo .html';
+    $('f-filebtn').classList.remove('ok');
+    $('f-nombre').value = '';
+    $('f-desc').value = '';
+    msg(m, '');
+    cerrarHoja();
+    toast('¡Publicado! GitHub tarda cerca de un minuto en mostrarlo.');
+  } catch (e) {
+    msg(m, e instanceof GhError ? textoError(e) : (e && e.message ? e.message : textoError(e)), 'err');
+  }
+  boton.disabled = false;
+});
+
+renderLista();
+cargarLista();
 
 // Al volver con "atrás" desde un juego, quitar el desvanecido
 window.addEventListener('pageshow', function () {

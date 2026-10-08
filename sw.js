@@ -1,6 +1,6 @@
 // Service worker de "Mis Juegos": permite instalar la app y jugar sin internet.
 // Si cambias archivos importantes, sube el número de VERSION para forzar la actualización.
-const VERSION = 'v6';
+const VERSION = 'v7';
 const CACHE = 'mis-juegos-' + VERSION;
 
 // Archivos base que se guardan al instalar
@@ -40,6 +40,24 @@ self.addEventListener('fetch', (event) => {
   const mismoSitio = url.origin === self.location.origin;
   const fuentes = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
   if (!mismoSitio && !fuentes) return;
+
+  // Lista de juegos (juegos.json): primero internet, para ver al instante un juego recién agregado.
+  // Se guarda con una clave fija para no acumular copias.
+  if (url.pathname.endsWith('/juegos.json')) {
+    const clave = new Request(url.origin + url.pathname);
+    event.respondWith(
+      fetch(req)
+        .then((resp) => {
+          if (resp && resp.ok) {
+            const copia = resp.clone();
+            caches.open(CACHE).then((c) => c.put(clave, copia));
+          }
+          return resp;
+        })
+        .catch(() => caches.match(clave))
+    );
+    return;
+  }
 
   // Páginas (menú y juegos): primero internet, así siempre ves la versión más nueva.
   // Si no hay conexión, se usa la copia guardada.
