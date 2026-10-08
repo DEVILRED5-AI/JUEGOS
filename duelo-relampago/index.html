@@ -23,10 +23,15 @@
     --gold: #ffcf5c;
   }
   * { box-sizing: border-box; }
+  
   html, body {
+    width: 100%;
     height: 100%;
+    height: 100vh;
+    height: 100dvh;
     margin: 0;
-    background: transparent;
+    padding: 0;
+    background: var(--bg);
     color: var(--ink);
     font-family: 'Inter', sans-serif;
     overflow: hidden;
@@ -36,18 +41,18 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
-  /* Fondo de la página: mitad de cada jugador, para que cualquier borde del iPhone se mezcle con los colores */
-  html {
-    height: 100%;
-    height: -webkit-fill-available;
-    background: linear-gradient(to bottom, var(--p2-dim) 50%, var(--p1-dim) 50%);
-  }
+
   #app {
     position: fixed;
     inset: 0;
+    width: 100%;
+    height: 100%;
+    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
   }
+
   .half {
     flex: 1;
     display: flex;
@@ -58,21 +63,24 @@
     transition: background-color 0.15s ease;
     padding: 12px;
     gap: 6px;
+    width: 100%;
   }
-  /* El color llega hasta los bordes; el margen de seguridad (muesca/barras) se aplica solo al contenido */
+
   #half-top {
     transform: rotate(180deg);
     background: var(--p2-dim);
     border-bottom: 1px solid #000;
-    padding-bottom: calc(12px + env(safe-area-inset-top, 0px));
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
   }
   #half-bottom {
     background: var(--p1-dim);
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
   }
-  #half-top.go-top { background: var(--p2); }
-  #half-bottom.go-bottom { background: var(--p1); }
-  .half.early { background: #2a2a30 !important; }
+
+  /* El cambio de color a "¡TOCA!" debe ser instantáneo (sin fundido) */
+  #half-top.go-top { background: var(--p2); transition: none; }
+  #half-bottom.go-bottom { background: var(--p1); transition: none; }
+  .half.early { background: #2a2a30 !important; transition: none; }
 
   .player-label {
     font-family: 'Space Grotesk', sans-serif;
@@ -139,8 +147,12 @@
   }
 
   #overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
+    width: 100%;
+    height: 100%;
+    height: 100vh;
+    height: 100dvh;
     background: rgba(14,14,18,0.96);
     display: flex;
     flex-direction: column;
@@ -188,8 +200,13 @@
   }
 
   #winner-overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
+    width: 100%;
+    height: 100%;
+    height: 100vh;
+    height: 100dvh;
+    background: rgba(14,14,18,0.96);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -208,7 +225,10 @@
   #winner-sub {
     color: var(--ink-dim);
     font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
   }
+  #winner-sub.ready { opacity: 1; }
 </style>
 </head>
 <body>
@@ -255,11 +275,17 @@
   const startBtn = document.getElementById('start-btn');
   const winnerOverlay = document.getElementById('winner-overlay');
   const winnerTitle = document.getElementById('winner-title');
+  const winnerSub = document.getElementById('winner-sub');
 
   const WIN_SCORE = 3;
+  const RESTART_LOCK_MS = 800; // pausa antes de aceptar toques en la pantalla del ganador
+
   let score = { top: 0, bottom: 0 };
-  let state = 'idle'; // idle | waiting | live | done
+  let state = 'idle'; // idle | waiting | live | done | paused | finished
   let goTimer = null;
+  let nextTimer = null;
+  let winnerTimer = null;
+  let canRestart = false;
   let roundNum = 1;
 
   function renderDots() {
@@ -285,10 +311,28 @@
     halfBottom.classList.remove('go-bottom', 'early');
   }
 
+  function clearAllTimers() {
+    clearTimeout(goTimer);
+    clearTimeout(nextTimer);
+    clearTimeout(winnerTimer);
+  }
+
   function startRound() {
-    state = 'waiting';
+    // Evita rondas duplicadas por temporizadores pendientes
+    clearTimeout(goTimer);
+    clearTimeout(nextTimer);
+
     resetHalvesColor();
     roundBadge.textContent = 'RONDA ' + roundNum;
+
+    // Si la pestaña está en segundo plano, esperar a que vuelva
+    if (document.hidden) {
+      state = 'paused';
+      setStatus('Prepárate…');
+      return;
+    }
+
+    state = 'waiting';
     setStatus('Prepárate…');
     const delay = 1200 + Math.random() * 2600;
     goTimer = setTimeout(() => {
@@ -314,10 +358,11 @@
     setStatus(reason === 'early' ? label + ' gana\n(el otro tocó antes)' : label + ' gana la ronda');
 
     if (score[winnerSide] >= WIN_SCORE) {
-      setTimeout(() => showWinner(winnerSide), 900);
+      state = 'finished';
+      winnerTimer = setTimeout(() => showWinner(winnerSide), 900);
     } else {
       roundNum++;
-      setTimeout(startRound, 1300);
+      nextTimer = setTimeout(startRound, 1300);
     }
   }
 
@@ -325,12 +370,27 @@
     const label = side === 'top' ? 'JUGADOR 2' : 'JUGADOR 1';
     winnerTitle.textContent = label + ' 🏆';
     winnerTitle.style.color = side === 'top' ? 'var(--p2)' : 'var(--p1)';
+    winnerSub.classList.remove('ready');
     winnerOverlay.classList.remove('hidden');
+
+    // Bloquea reinicios accidentales por toques de la ronda anterior
+    canRestart = false;
+    setTimeout(() => {
+      canRestart = true;
+      winnerSub.classList.add('ready');
+    }, RESTART_LOCK_MS);
+  }
+
+  function resetGame() {
+    clearAllTimers();
+    score = { top: 0, bottom: 0 };
+    roundNum = 1;
+    renderDots();
+    startRound();
   }
 
   function handleTap(side) {
     if (state === 'waiting') {
-      // tocó antes de tiempo
       endRound(side === 'top' ? 'bottom' : 'top', 'early');
     } else if (state === 'live') {
       endRound(side, 'win');
@@ -343,21 +403,29 @@
   startBtn.addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     overlay.classList.add('hidden');
-    score = { top: 0, bottom: 0 };
-    roundNum = 1;
-    renderDots();
-    startRound();
+    resetGame();
   });
 
   winnerOverlay.addEventListener('pointerdown', () => {
+    if (!canRestart) return;
     winnerOverlay.classList.add('hidden');
-    score = { top: 0, bottom: 0 };
-    roundNum = 1;
-    renderDots();
-    startRound();
+    resetGame();
   });
 
-  // Bloqueo de zoom (también para iOS)
+  // Si el jugador cambia de app, pausa la ronda y la reinicia al volver
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (state === 'waiting' || state === 'live') {
+        clearTimeout(goTimer);
+        state = 'paused';
+        resetHalvesColor();
+        setStatus('Prepárate…');
+      }
+    } else if (state === 'paused') {
+      startRound();
+    }
+  });
+
   ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) {
     document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false });
   });
@@ -367,17 +435,6 @@
   document.addEventListener('wheel', function (e) {
     if (e.ctrlKey) e.preventDefault();
   }, { passive: false });
-
-  // Pantalla completa al empezar (oculta las barras del sistema)
-  document.addEventListener('click', function (e) {
-    if (e.target.closest && e.target.closest('a')) return;
-    var el = document.documentElement;
-    if (document.fullscreenElement || !el.requestFullscreen) return;
-    try {
-      var p = el.requestFullscreen({ navigationUI: 'hide' });
-      if (p && p.catch) p.catch(function () {});
-    } catch (err) {}
-  });
 
   renderDots();
 })();
