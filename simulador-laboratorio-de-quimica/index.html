@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Simulador de Laboratorio: Separación de Mezclas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+            background: #f8fafc;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        /* Landscape orientation lock */
+        #rotate-device-overlay {
+            display: none;
+        }
+        @media screen and (orientation: portrait) {
+            #rotate-device-overlay {
+                display: flex !important;
+            }
+            #lab-container {
+                display: none !important;
+            }
+        }
+
+        /* Laboratory Table & Realistic Lighting */
+        .lab-table {
+            background: radial-gradient(circle at 50% 20%, #ffffff 0%, #f1f5f9 60%, #e2e8f0 100%);
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .table-bench-top {
+            background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 35%, #94a3b8 100%);
+            border-top: 3px solid #f8fafc;
+        }
+
+        /* Glassmorphism Beaker */
+        .glass-beaker {
+            background: linear-gradient(135deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.12) 100%);
+            border-left: 2px solid rgba(255, 255, 255, 0.85);
+            border-right: 2px solid rgba(255, 255, 255, 0.75);
+            border-bottom: 3.5px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 
+                inset -4px -4px 14px rgba(255,255,255,0.6), 
+                inset 4px 4px 14px rgba(0,0,0,0.05),
+                0 15px 30px -8px rgba(30, 41, 59, 0.25);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border-radius: 4px 4px 22px 22px;
+            position: relative;
+        }
+
+        .beaker-lip {
+            position: absolute;
+            top: -2px;
+            left: -4px;
+            width: 14px;
+            height: 6px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 4px 0 0 4px;
+            border-top: 1.5px solid white;
+        }
+
+        /* Fluid Meniscus */
+        .fluid-layer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1), background 0.7s ease;
+            overflow: hidden;
+            border-radius: 0 0 19px 19px;
+        }
+
+        .meniscus-curve {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 12px;
+            background: radial-gradient(ellipse at 50% 120%, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.1) 75%);
+            border-radius: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Glass Stirring Rod */
+        .stir-rod {
+            width: 9px;
+            height: 175px;
+            background: linear-gradient(90deg, 
+                rgba(255,255,255,0.85) 0%, 
+                rgba(219,234,254,0.45) 30%, 
+                rgba(191,219,254,0.7) 70%, 
+                rgba(255,255,255,0.9) 100%);
+            border: 1px solid rgba(255,255,255,0.9);
+            box-shadow: 2px 2px 6px rgba(0,0,0,0.18), inset 1px 0 2px rgba(255,255,255,0.8);
+            border-radius: 5px;
+        }
+
+        /* Whirpool animation */
+        @keyframes rodSwirl {
+            0% { transform: translate(-50%, -20%) rotate(-12deg); }
+            50% { transform: translate(-50%, -20%) rotate(14deg) scaleX(0.95); }
+            100% { transform: translate(-50%, -20%) rotate(-12deg); }
+        }
+
+        @keyframes liquidVortex {
+            0% { transform: scaleY(1) rotate(0deg); }
+            50% { transform: scaleY(0.92) skewX(4deg); }
+            100% { transform: scaleY(1) rotate(0deg); }
+        }
+
+        .swirling-rod {
+            animation: rodSwirl 0.5s infinite ease-in-out;
+        }
+        .vortex-liquid {
+            animation: liquidVortex 0.4s infinite ease-in-out;
+        }
+
+        /* Bunsen Burner flame */
+        @keyframes bunsenFlicker {
+            0% { transform: translateX(-50%) scale(1) skewX(-1deg); opacity: 0.95; }
+            35% { transform: translateX(-50%) scale(1.06, 0.96) skewX(2deg); opacity: 1; }
+            70% { transform: translateX(-50%) scale(0.94, 1.05) skewX(-2deg); opacity: 0.92; }
+            100% { transform: translateX(-50%) scale(1.02, 1.02) skewX(1deg); opacity: 0.98; }
+        }
+
+        .flame-core {
+            animation: bunsenFlicker 0.12s infinite alternate;
+        }
+
+        /* Steam particles */
+        @keyframes vaporRise {
+            0% { transform: translate(-50%, 0) scale(0.8); opacity: 0.8; }
+            50% { transform: translate(-45%, -40px) scale(1.4); opacity: 0.5; }
+            100% { transform: translate(-55%, -85px) scale(2.2); opacity: 0; }
+        }
+        .vapor-cloud {
+            animation: vaporRise 1.6s infinite ease-out;
+        }
+
+        /* Precipitation Keyframes */
+        @keyframes crystalSinking {
+            0% { transform: translateY(0px) rotate(0deg); opacity: 0.9; }
+            100% { transform: translateY(var(--fall-dist)) rotate(var(--fall-rot)); opacity: 1; }
+        }
+
+        .falling-crystal {
+            animation: crystalSinking var(--fall-time) cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+        }
+
+        /* Droplet animation */
+        @keyframes dropFall {
+            0% { transform: translateY(0); opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(55px); opacity: 0; }
+        }
+        .filter-droplet {
+            animation: dropFall 0.7s infinite linear;
+        }
+
+        /* Toast animation */
+        @keyframes toastEntry {
+            0% { transform: translateX(110%) scale(0.9); opacity: 0; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
+        }
+        @keyframes toastExit {
+            0% { transform: translateX(0) scale(1); opacity: 1; }
+            100% { transform: translateX(110%) scale(0.9); opacity: 0; }
+        }
+        .toast-show { animation: toastEntry 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .toast-hide { animation: toastExit 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
+
+        /* Draggable ghost styling */
+        .drag-ghost {
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            transform: translate(-50%, -50%) scale(1.1);
+            filter: drop-shadow(0 12px 20px rgba(15, 23, 42, 0.25));
+            opacity: 0.92;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <!-- Portrait Warning Overlay -->
+    <div id="rotate-device-overlay" class="fixed inset-0 bg-slate-900 z-[999999] flex flex-col items-center justify-center p-6 text-center text-white">
+        <div class="relative w-24 h-24 mb-6 flex items-center justify-center">
+            <svg class="w-16 h-16 text-cyan-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+            </svg>
+            <svg class="w-8 h-8 text-amber-400 absolute animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+        </div>
+        <h2 class="text-2xl font-bold tracking-tight mb-2">Gira tu dispositivo</h2>
+        <p class="text-slate-300 max-w-sm text-sm">Este laboratorio virtual de química interactivo requiere visualización apaisada (Horizontal) para montar y operar los instrumentos adecuadamente.</p>
+    </div>
+
+    <!-- Floating Toasts Notifications System -->
+    <div id="toast-wrapper" class="fixed top-3 right-3 z-[9999] flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+    <div id="lab-container" class="w-screen h-screen flex flex-col">
+        
+        <!-- Top Lab Bar -->
+        <header class="h-10 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 flex items-center justify-between shrink-0 shadow-sm z-30">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center text-white text-xs shadow-sm font-bold">
+                    ⚗️
+                </div>
+                <h1 class="text-xs md:text-sm font-extrabold text-slate-800 tracking-wide">
+                    LABORATORIO QUÍMICO <span class="font-normal text-slate-500 text-xs">| Separación de Mezclas y Soluciones</span>
+                </h1>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <div id="solution-badge" class="px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                    Beaker: Vacío
+                </div>
+                <button id="btn-reset-all" class="flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs px-2.5 py-1 rounded-md font-bold transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    Reiniciar
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Work Area (3 Columns: Tools - Worktable - Substances) -->
+        <div class="flex-1 flex flex-row overflow-hidden relative">
+
+            <aside class="w-24 md:w-32 bg-white/95 border-r border-slate-200 flex flex-col items-center py-2 shrink-0 z-20 shadow-sm overflow-y-auto">
+                <span class="text-[10px] font-bold tracking-wider uppercase text-slate-400 mb-2 border-b border-slate-100 w-full text-center pb-1">
+                    Instrumentos
+                </span>
+
+                <div class="w-full flex flex-col items-center gap-2.5 px-2">
+                    
+                    <!-- Tool 1: Glass Beaker -->
+                    <div class="drag-item group w-20 md:w-24 p-1.5 rounded-xl bg-slate-50 hover:bg-blue-50/70 border border-slate-200/90 hover:border-blue-300 transition-all cursor-grab active:cursor-grabbing flex flex-col items-center" 
+                         data-type="tool" data-id="beaker">
+                        <div class="w-12 h-14 relative flex items-center justify-center">
+                            <div class="w-10 h-12 glass-beaker rounded-b-md">
+                                <div class="beaker-lip"></div>
+                                <div class="absolute right-1 top-2 w-2 border-t border-slate-400/60"></div>
+                                <div class="absolute right-1 top-5 w-3 border-t border-slate-400/80"></div>
+                                <div class="absolute right-1 top-8 w-2 border-t border-slate-400/60"></div>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-700 mt-1">Beaker 250ml</span>
+                    </div>
+
+                    <!-- Tool 2: Glass Stirring Rod -->
+                    <div class="drag-item group w-20 md:w-24 p-1.5 rounded-xl bg-slate-50 hover:bg-blue-50/70 border border-slate-200/90 hover:border-blue-300 transition-all cursor-grab active:cursor-grabbing flex flex-col items-center" 
+                         data-type="tool" data-id="rod">
+                        <div class="w-12 h-14 flex items-center justify-center">
+                            <div class="stir-rod w-2 h-12 transform rotate-12"></div>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-700 mt-1">Varilla Vidrio</span>
+                    </div>
+
+                    <!-- Tool 3: Glass Funnel (Separated) -->
+                    <div class="drag-item group w-20 md:w-24 p-1.5 rounded-xl bg-slate-50 hover:bg-blue-50/70 border border-slate-200/90 hover:border-blue-300 transition-all cursor-grab active:cursor-grabbing flex flex-col items-center" 
+                         data-type="tool" data-id="funnel">
+                        <div class="w-12 h-14 flex flex-col items-center justify-center">
+                            <div class="w-11 h-7 border-t-[18px] border-t-slate-200/80 border-l-[18px] border-l-transparent border-r-[18px] border-r-transparent drop-shadow-sm relative">
+                                <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-1.5 h-4 bg-slate-200/90 border border-slate-300/40"></div>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-700 mt-1">Embudo Cónico</span>
+                    </div>
+
+                    <!-- Tool 4: Filter Paper (Separated) -->
+                    <div class="drag-item group w-20 md:w-24 p-1.5 rounded-xl bg-slate-50 hover:bg-blue-50/70 border border-slate-200/90 hover:border-blue-300 transition-all cursor-grab active:cursor-grabbing flex flex-col items-center" 
+                         data-type="tool" data-id="filter_paper">
+                        <div class="w-12 h-14 flex items-center justify-center">
+                            <div class="w-9 h-7 bg-white border border-slate-300 shadow-inner rounded-t-sm" style="clip-path: polygon(0 0, 100% 0, 50% 100%);"></div>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-700 mt-1">Papel Filtro</span>
+                    </div>
+
+                    <!-- Tool 5: Bunsen Burner -->
+                    <div class="drag-item group w-20 md:w-24 p-1.5 rounded-xl bg-slate-50 hover:bg-blue-50/70 border border-slate-200/90 hover:border-blue-300 transition-all cursor-grab active:cursor-grabbing flex flex-col items-center" 
+                         data-type="tool" data-id="burner">
+                        <div class="w-12 h-14 flex flex-col items-center justify-end pb-1">
+                            <div class="w-2.5 h-7 bg-gradient-to-r from-slate-600 via-slate-300 to-slate-700 rounded-t-sm"></div>
+                            <div class="w-7 h-1.5 bg-gradient-to-r from-amber-600 via-amber-400 to-amber-700 rounded-sm"></div>
+                            <div class="w-10 h-2 bg-gradient-to-r from-slate-800 via-slate-600 to-slate-900 rounded-sm shadow-md"></div>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-700 mt-1">Mechero Bunsen</span>
+                    </div>
+
+                    <!-- Tool 6: Metallic Sieve -->
+                    <div class="drag-item group w-20 md:w-24 p-1.5 rounded-xl bg-slate-50 hover:bg-blue-50/70 border border-slate-200/90 hover:border-blue-300 transition-all cursor-grab active:cursor-grabbing flex flex-col items-center" 
+                         data-type="tool" data-id="sieve">
+                        <div class="w-12 h-14 flex items-center justify-center">
+                            <div class="w-11 h-4 bg-slate-200 border-2 border-slate-600 rounded relative overflow-hidden shadow-sm">
+                                <div class="absolute inset-0 bg-[linear-gradient(90deg,#475569_1px,transparent_1px),linear-gradient(0deg,#475569_1px,transparent_1px)] bg-[size:3px_3px] opacity-60"></div>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-700 mt-1">Tamiz Malla</span>
+                    </div>
+
+                </div>
+            </aside>
+
+            <main id="workbench-zone" class="flex-1 lab-table relative flex flex-col justify-between overflow-hidden">
+                
+                <!-- Action Buttons Container (Dynamic) -->
+                <div class="w-full pt-3 px-4 flex items-center justify-center gap-2 z-30 pointer-events-none">
+                    <div id="dynamic-actions" class="flex flex-wrap gap-2 pointer-events-auto backdrop-blur-md bg-white/70 p-1.5 rounded-xl border border-slate-200/80 shadow-md transition-all">
+                        <span class="text-xs font-semibold text-slate-400 px-2 py-1 flex items-center">
+                            Arrastra instrumentos al centro de la mesa
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Central Assembly Area -->
+                <div class="flex-1 w-full relative flex items-center justify-center">
+                    
+                    <!-- Support Stand (Soporte Universal) Visual Cue -->
+                    <div id="universal-stand" class="absolute bottom-12 w-64 h-[270px] pointer-events-none opacity-20 flex items-end justify-center transition-opacity">
+                        <!-- Vertical metal rod -->
+                        <div class="absolute left-10 bottom-0 w-3 h-full bg-gradient-to-r from-slate-400 via-slate-100 to-slate-500 rounded-t-sm"></div>
+                        <!-- Iron Base -->
+                        <div class="w-full h-3 bg-gradient-to-r from-slate-800 via-slate-600 to-slate-900 rounded-sm shadow-md"></div>
+                        <!-- Ring Clamp shadow -->
+                        <div class="absolute left-10 top-24 w-28 h-2 border-t-2 border-b-2 border-slate-700"></div>
+                    </div>
+
+                    <!-- Laboratory Equipment Assembly Stage -->
+                    <div id="assembly-rig" class="relative w-80 h-[320px] flex flex-col items-center justify-end z-20">
+                        <!-- Drop Target Hint when dragging over -->
+                        <div id="rig-drop-indicator" class="absolute inset-2 border-2 border-dashed border-cyan-400/0 rounded-2xl transition-all duration-300 pointer-events-none flex items-center justify-center">
+                            <span class="text-cyan-800/0 font-extrabold text-sm uppercase tracking-widest transition-colors">Zona de Montaje</span>
+                        </div>
+
+                        <!-- Rendered Interactive Equipment Rig (Populated dynamically) -->
+                        <div id="interactive-rig" class="w-full h-full relative flex flex-col items-center justify-end"></div>
+                    </div>
+                </div>
+
+                <!-- Laboratory Bench Surface Bottom Bar -->
+                <div class="table-bench-top w-full h-12 shrink-0 relative flex items-center justify-between px-6 z-10">
+                    <span class="text-[10px] tracking-widest text-slate-600 font-mono font-semibold uppercase">
+                        Superficie Cerámica Inerte - ASTM E438
+                    </span>
+                    <div class="flex items-center gap-1.5 text-xs text-slate-600">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        <span class="font-medium text-[11px]">Sistema Operativo Listo</span>
+                    </div>
+                </div>
+
+            </main>
+
+            <aside class="w-24 md:w-32 bg-white/95 border-l border-slate-200 flex flex-col items-center py-2 shrink-0 z-20 shadow-sm overflow-y-auto">
+                <span class="text-[10px] font-bold tracking-wider uppercase text-slate-400 mb-2 border-b border-slate-100 w-full text-center pb-1">
+                    Sustancias
+                </span>
+
+                <div class="w-full flex flex-col items-center gap-2.5 px-2">
+                    
+                    <!-- Substance 1: Pure Distilled Water H2O -->
+                    <div class="drag-item group w-20 md:w-24 p-2 rounded-xl bg-cyan-50/50 hover:bg-cyan-100/60 border border-cyan-200/80 transition-all cursor-grab active:cursor-grabbing flex flex-col items-center"
+                         data-type="substance" data-id="water">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-300 shadow-md flex items-center justify-center relative overflow-hidden border border-white">
+                            <div class="w-full h-4 bg-white/30 absolute top-0 rounded-full blur-[1px]"></div>
+                            <span class="text-white text-xs font-black drop-shadow">H₂O</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-cyan-900 mt-1.5">Agua Destilada</span>
+                        <span class="text-[8px] text-cyan-600">Solvente (50 ml)</span>
+                    </div>
+
+                    <!-- Substance 2: Pure Sodium Chloride (NaCl) -->
+                    <div class="drag-item group w-20 md:w-24 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all cursor-grab active:cursor-grabbing flex flex-col items-center"
+                         data-type="substance" data-id="salt">
+                        <div class="w-10 h-10 rounded-full bg-white border border-slate-300 shadow-sm flex items-center justify-center relative overflow-hidden">
+                            <!-- Salt crystal lattice visual -->
+                            <div class="w-3 h-3 bg-slate-100 border border-slate-300 transform rotate-45 shadow-xs"></div>
+                            <div class="absolute w-2 h-2 bg-slate-50 border border-slate-300 transform -rotate-12 top-1.5 left-2"></div>
+                            <div class="absolute w-2.5 h-2.5 bg-slate-100 border border-slate-300 transform rotate-45 bottom-1 right-2"></div>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-800 mt-1.5">Sal (NaCl)</span>
+                        <span class="text-[8px] text-slate-500">Soluto Cristalino</span>
+                    </div>
+
+                    <!-- Substance 3: Fine Silica Sand (SiO2) -->
+                    <div class="drag-item group w-20 md:w-24 p-2 rounded-xl bg-amber-50/60 hover:bg-amber-100/60 border border-amber-200 transition-all cursor-grab active:cursor-grabbing flex flex-col items-center"
+                         data-type="substance" data-id="sand">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-b from-amber-200 to-yellow-600 border border-amber-300 shadow-inner flex items-center justify-center relative overflow-hidden">
+                            <div class="absolute inset-0 bg-[radial-gradient(#78350f_1px,transparent_1px)] bg-[size:3px_3px] opacity-35"></div>
+                            <span class="text-amber-950 font-black text-[9px] drop-shadow-sm">SiO₂</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-amber-900 mt-1.5">Arena Fina</span>
+                        <span class="text-[8px] text-amber-600">Sólido Insoluble</span>
+                    </div>
+
+                    <!-- Substance 4: Irregular Mineral Stones -->
+                    <div class="drag-item group w-20 md:w-24 p-2 rounded-xl bg-stone-100 hover:bg-stone-200/80 border border-stone-300 transition-all cursor-grab active:cursor-grabbing flex flex-col items-center"
+                         data-type="substance" data-id="stones">
+                        <div class="w-10 h-10 rounded-full bg-stone-300 border border-stone-400 shadow-inner flex items-center justify-center gap-0.5 p-1 relative overflow-hidden">
+                            <div class="w-3.5 h-3 bg-stone-600 rounded-sm transform rotate-12 shadow-xs"></div>
+                            <div class="w-3 h-3.5 bg-stone-500 rounded-sm transform -rotate-45 shadow-xs"></div>
+                        </div>
+                        <span class="text-[10px] font-bold text-stone-800 mt-1.5">Piedras</span>
+                        <span class="text-[8px] text-stone-500">Grano Grueso</span>
+                    </div>
+
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script>
+        const LabState = {
+            rig: {
+                hasBeaker: false,
+                hasFunnel: false,
+                hasFilterPaper: false,
+                hasStirRod: false,
+                hasBunsenBurner: false,
+                hasSieve: false
+            },
+            beakerContents: {
+                waterVolume: 0,      // in ml (50ml increments up to 250)
+                saltPortionsAdded: 0, // grams/portions added without dissolving yet
+                dissolvedSalt: 0,     // salt dissolved in solution
+                precipitatedSalt: 0,  // excess salt as solid crystal deposit
+                sandPortions: 0,      // insoluble sand
+                stonesPortions: 0     // coarse stones
+            },
+            funnelContents: {
+                trappedSand: 0,
+                isWet: false
+            },
+            sieveContents: {
+                trappedStones: 0
+            },
+            processState: {
+                isBurnerIgnited: false,
+                isEvaporating: false,
+                isStirring: false,
+                isFiltering: false,
+                isSieving: false
+            }
+        };
+
+        // DOM Cache
+        const DOM = {
+            interactiveRig: document.getElementById('interactive-rig'),
+            dynamicActions: document.getElementById('dynamic-actions'),
+            toastWrapper: document.getElementById('toast-wrapper'),
+            solutionBadge: document.getElementById('solution-badge'),
+            universalStand: document.getElementById('universal-stand'),
+            rigDropIndicator: document.getElementById('rig-drop-indicator'),
+            btnResetAll: document.getElementById('btn-reset-all')
+        };
+
+        function notify(title, message, theme = 'info') {
+            const toast = document.createElement('div');
+            
+            let borderBg = 'bg-white border-slate-200 text-slate-800';
+            let icon = 'ℹ️';
+
+            if (theme === 'success') {
+                borderBg = 'bg-emerald-50/95 border-emerald-300 text-emerald-950';
+                icon = '✅';
+            } else if (theme === 'warning') {
+                borderBg = 'bg-amber-50/95 border-amber-300 text-amber-950';
+                icon = '⚠️';
+            } else if (theme === 'heat') {
+                borderBg = 'bg-orange-50/95 border-orange-300 text-orange-950';
+                icon = '🔥';
+            } else if (theme === 'chemistry') {
+                borderBg = 'bg-cyan-50/95 border-cyan-300 text-cyan-950';
+                icon = '🧪';
+            }
+
+            toast.className = `toast-show flex items-start gap-2.5 p-3 rounded-xl shadow-lg border backdrop-blur-md pointer-events-auto ${borderBg}`;
+            toast.innerHTML = `
+                <span class="text-base leading-none">${icon}</span>
+                <div class="flex-1 pr-1">
+                    <div class="text-xs font-bold">${title}</div>
+                    <div class="text-[11px] leading-snug opacity-90">${message}</div>
+                </div>
+            `;
+
+            DOM.toastWrapper.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('toast-show');
+                toast.classList.add('toast-hide');
+                setTimeout(() => toast.remove(), 320);
+            }, 3800);
+        }
+
+        let activeDrag = null;
+        let ghostEl = null;
+
+        document.querySelectorAll('.drag-item').forEach(item => {
+            item.addEventListener('pointerdown', onPointerDown);
+        });
+
+        function onPointerDown(e) {
+            // Only left mouse or primary touch
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+            e.preventDefault();
+            const source = e.currentTarget;
+
+            activeDrag = {
+                type: source.dataset.type,
+                id: source.dataset.id,
+                originElement: source
+            };
+
+            // Create Ghost Element
+            ghostEl = source.cloneNode(true);
+            ghostEl.classList.add('drag-ghost');
+            document.body.appendChild(ghostEl);
+
+            updateGhostPosition(e.clientX, e.clientY);
+
+            // Light up drop zone
+            DOM.rigDropIndicator.classList.remove('border-cyan-400/0');
+            DOM.rigDropIndicator.classList.add('border-cyan-500/60', 'bg-cyan-500/5');
+            DOM.rigDropIndicator.querySelector('span').classList.remove('text-cyan-800/0');
+            DOM.rigDropIndicator.querySelector('span').classList.add('text-cyan-800/60');
+
+            document.addEventListener('pointermove', onPointerMove);
+            document.addEventListener('pointerup', onPointerUp);
+            document.addEventListener('pointercancel', onPointerUp);
+
+            if (navigator.vibrate) navigator.vibrate(10);
+        }
+
+        function onPointerMove(e) {
+            if (!ghostEl) return;
+            e.preventDefault();
+            updateGhostPosition(e.clientX, e.clientY);
+        }
+
+        function updateGhostPosition(x, y) {
+            ghostEl.style.left = `${x}px`;
+            ghostEl.style.top = `${y}px`;
+        }
+
+        function onPointerUp(e) {
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerUp);
+
+            DOM.rigDropIndicator.classList.add('border-cyan-400/0');
+            DOM.rigDropIndicator.classList.remove('border-cyan-500/60', 'bg-cyan-500/5');
+            DOM.rigDropIndicator.querySelector('span').classList.add('text-cyan-800/0');
+            DOM.rigDropIndicator.querySelector('span').classList.remove('text-cyan-800/60');
+
+            if (!ghostEl) return;
+
+            ghostEl.remove();
+            ghostEl = null;
+
+            // Target evaluation via hit test under finger/cursor
+            const hit = document.elementFromPoint(e.clientX, e.clientY);
+            const droppedOnWorkbench = hit ? hit.closest('#workbench-zone') : null;
+
+            if (droppedOnWorkbench) {
+                handleEquipmentOrSubstanceDrop(activeDrag.type, activeDrag.id);
+            }
+
+            activeDrag = null;
+        }
+
+        function handleEquipmentOrSubstanceDrop(type, id) {
+            const r = LabState.rig;
+            const b = LabState.beakerContents;
+
+            if (type === 'tool') {
+                switch(id) {
+                    case 'beaker':
+                        if (!r.hasBeaker) {
+                            r.hasBeaker = true;
+                            DOM.universalStand.classList.remove('opacity-20');
+                            DOM.universalStand.classList.add('opacity-40');
+                            notify("Beaker instalado", "Graduado hasta 250 ml en vidrio de borosilicato.", "chemistry");
+                        } else {
+                            notify("Aviso", "El Beaker ya se encuentra en el soporte de trabajo.", "warning");
+                        }
+                        break;
+
+                    case 'funnel':
+                        if (!r.hasBeaker) {
+                            notify("Secuencia requerida", "Primero debes colocar el Beaker para sostener el embudo receptor.", "warning");
+                            return;
+                        }
+                        if (r.hasSieve) {
+                            notify("Montaje incompatible", "Retira o vacía el tamiz antes de montar el sistema de filtración.", "warning");
+                            return;
+                        }
+                        if (!r.hasFunnel) {
+                            r.hasFunnel = true;
+                            notify("Embudo cónico montado", "Falta doblar y colocar el papel filtro para completar la filtración.", "info");
+                        } else {
+                            notify("Aviso", "El embudo ya está colocado sobre el Beaker.", "info");
+                        }
+                        break;
+
+                    case 'filter_paper':
+                        if (!r.hasFunnel) {
+                            notify("Error de montaje", "El papel filtro no puede sostenerse solo. Debe colocarse dentro del embudo cónico.", "warning");
+                            return;
+                        }
+                        if (!r.hasFilterPaper) {
+                            r.hasFilterPaper = true;
+                            notify("Papel Filtro Acoplado", "Sistema de filtración por gravedad completado con éxito.", "success");
+                        } else {
+                            notify("Aviso", "El papel filtro ya está ajustado dentro del embudo.", "info");
+                        }
+                        break;
+
+                    case 'rod':
+                        if (!r.hasBeaker) {
+                            notify("Aviso", "Coloca el Beaker antes de insertar la varilla de agitación.", "warning");
+                            return;
+                        }
+                        if (r.hasFunnel || r.hasSieve) {
+                            notify("Obstrucción", "No puedes insertar la varilla mientras el embudo o tamiz cubran la boca del beaker.", "warning");
+                            return;
+                        }
+                        if (!r.hasStirRod) {
+                            r.hasStirRod = true;
+                            notify("Varilla agregada", "Lista para homogeneizar o disolver solutos en el solvente.", "info");
+                        }
+                        break;
+
+                    case 'burner':
+                        if (r.hasBunsenBurner) {
+                            notify("Aviso", "El mechero Bunsen ya está ubicado en la base térmica.", "info");
+                            return;
+                        }
+                        r.hasBunsenBurner = true;
+                        notify("Mechero Bunsen instalado", "Ubicado bajo el beaker para procesos de evaporación y cristalización.", "heat");
+                        break;
+
+                    case 'sieve':
+                        if (!r.hasBeaker) {
+                            notify("Montaje requerido", "Coloca el Beaker recolector antes de poner el tamiz metálico.", "warning");
+                            return;
+                        }
+                        if (r.hasFunnel) {
+                            notify("Incompatibilidad", "Retira el embudo cónico antes de ubicar el tamiz.", "warning");
+                            return;
+                        }
+                        if (!r.hasSieve) {
+                            r.hasSieve = true;
+                            notify("Tamiz acoplado", "Malla metálica lista para separación sólido-sólido por diferencia de tamaño.", "info");
+                        }
+                        break;
+                }
+            } 
+            else if (type === 'substance') {
+                if (!r.hasBeaker) {
+                    notify("Sin contenedor", "Debes colocar primero el Beaker en la mesa para recibir sustancias.", "warning");
+                    return;
+                }
+
+                // If Funnel is active
+                if (r.hasFunnel) {
+                    if (!r.hasFilterPaper) {
+                        notify("¡Cuidado!", "Si viertes la sustancia sin el papel filtro, los sólidos caerán directamente al beaker sin filtrar.", "warning");
+                        return;
+                    }
+                }
+
+                // Chemical addition
+                switch(id) {
+                    case 'water':
+                        if (b.waterVolume >= 250) {
+                            notify("Beaker al límite", "Capacidad máxima de 250 ml alcanzada.", "warning");
+                            return;
+                        }
+                        b.waterVolume += 50;
+                        notify("Agua Destilada +50ml", `Volumen actual en beaker: ${b.waterVolume} ml. Solvente añadido.`, "chemistry");
+                        break;
+
+                    case 'salt':
+                        b.saltPortionsAdded += 1;
+                        notify("Cloruro de Sodio (NaCl)", "Granos de sal depositados. Sin agitación mecánica permanece sin disolver.", "info");
+                        break;
+
+                    case 'sand':
+                        b.sandPortions += 1;
+                        notify("Arena Sílice añadida", "Partículas minerales insolubles. Forman suspensión heterogénea.", "info");
+                        break;
+
+                    case 'stones':
+                        b.stonesPortions += 1;
+                        notify("Piedras agregadas", "Fracciones minerales gruesas. Macroscópicamente distinguibles.", "info");
+                        break;
+                }
+            }
+
+            renderRig();
+            updateControlButtons();
+            updateSolutionBadge();
+        }
+
+        function renderRig() {
+            const r = LabState.rig;
+            const b = LabState.beakerContents;
+            const p = LabState.processState;
+
+            if (!r.hasBeaker && !r.hasBunsenBurner) {
+                DOM.interactiveRig.innerHTML = `
+                    <div class="text-center text-slate-400 font-medium text-xs pb-10 flex flex-col items-center">
+                        <svg class="w-10 h-10 mb-2 opacity-40 text-slate-500 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                        Arrastra un Beaker o Mechero aquí
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            // Top Mount: Sieve or Funnel
+            if (r.hasSieve) {
+                const hasStonesInSieve = LabState.sieveContents.trappedStones > 0;
+                html += `
+                    <div class="relative z-30 mb-[-12px] flex flex-col items-center">
+                        <div class="w-36 h-7 bg-gradient-to-r from-slate-300 via-slate-100 to-slate-400 border-2 border-slate-600 rounded-lg shadow-lg relative flex items-center justify-center overflow-hidden">
+                            <div class="absolute inset-0 bg-[linear-gradient(90deg,#334155_2px,transparent_2px),linear-gradient(0deg,#334155_2px,transparent_2px)] bg-[size:4px_4px] opacity-70"></div>
+                            ${hasStonesInSieve ? `
+                                <div class="absolute inset-0 flex items-center justify-center gap-1.5 p-1 z-10">
+                                    <div class="w-4 h-3.5 bg-stone-700 rounded transform rotate-12 shadow"></div>
+                                    <div class="w-5 h-4 bg-stone-600 rounded transform -rotate-45 shadow"></div>
+                                    <div class="w-4 h-4 bg-stone-800 rounded transform rotate-30 shadow"></div>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <span class="text-[9px] font-bold text-slate-700 bg-white/80 px-1.5 rounded-full border border-slate-200 mt-0.5">Tamiz de laboratorio</span>
+                    </div>
+                `;
+            } else if (r.hasFunnel) {
+                const hasSand = LabState.funnelContents.trappedSand > 0;
+                html += `
+                    <div class="relative z-30 mb-[-16px] flex flex-col items-center">
+                        <!-- Glass Conical Body -->
+                        <div class="w-24 h-14 relative flex items-center justify-center">
+                            <!-- Conical Glass Funnel -->
+                            <div class="w-20 h-10 border-t-[34px] border-t-white/40 border-l-[28px] border-l-transparent border-r-[28px] border-r-transparent drop-shadow-md relative backdrop-blur-[2px]">
+                                <!-- Filter Paper Inside Funnel -->
+                                ${r.hasFilterPaper ? `
+                                    <div class="absolute -top-[34px] left-1/2 -translate-x-1/2 w-16 h-8 border-t-[28px] ${hasSand ? 'border-t-amber-100' : 'border-t-white'} border-l-[22px] border-l-transparent border-r-[22px] border-r-transparent drop-shadow-sm flex items-center justify-center transition-colors">
+                                        ${hasSand ? `
+                                            <div class="absolute -top-[27px] left-1/2 -translate-x-1/2 w-8 h-4 rounded-full bg-amber-700/80 blur-[0.5px]"></div>
+                                        ` : ''}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <!-- Stem of Funnel entering beaker mouth -->
+                            <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-2.5 h-6 bg-white/40 border-x border-white/70"></div>
+                            
+                            <!-- Dynamic Droplet in filtration -->
+                            ${p.isFiltering ? `
+                                <div class="filter-droplet absolute -bottom-6 left-1/2 -translate-x-1/2 w-2 h-2.5 bg-cyan-400 rounded-full shadow"></div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Glass Stirring Rod in Beaker
+            let stirRodHtml = '';
+            if (r.hasStirRod) {
+                stirRodHtml = `
+                    <div class="stir-rod absolute z-40 top-[-30px] left-1/2 -translate-x-1/2 ${p.isStirring ? 'swirling-rod' : 'transform rotate-[14deg] origin-bottom'} transition-transform"></div>
+                `;
+            }
+
+            // Steam Animation during evaporation
+            let steamHtml = '';
+            if (p.isEvaporating) {
+                steamHtml = `
+                    <div class="vapor-cloud absolute -top-16 left-1/2 w-14 h-14 bg-white/70 rounded-full blur-md pointer-events-none z-50"></div>
+                    <div class="vapor-cloud absolute -top-12 left-[40%] w-10 h-10 bg-white/60 rounded-full blur-md pointer-events-none z-50" style="animation-delay: 0.5s;"></div>
+                `;
+            }
+
+            // Beaker Core Structure
+            if (r.hasBeaker) {
+                // Compute Liquid Height Percentage (max 250ml = 82%)
+                const liquidHeightPct = Math.min((b.waterVolume / 250) * 82, 85);
+                
+                // Color computation based on chemistry state
+                let liquidColorClass = 'bg-cyan-400/35';
+                if (b.sandPortions > 0 && b.waterVolume > 0) {
+                    liquidColorClass = 'bg-amber-700/40'; // Heterogeneous turbid
+                } else if (b.dissolvedSalt > 0) {
+                    liquidColorClass = b.dissolvedSalt >= 3 ? 'bg-cyan-200/50' : 'bg-cyan-300/40';
+                }
+
+                // Render Solids in Beaker
+                let solidsHtml = '';
+
+                // 1. Undissolved Raw Salt (before stirring)
+                if (b.saltPortionsAdded > 0) {
+                    const count = Math.min(b.saltPortionsAdded * 5, 20);
+                    solidsHtml += `
+                        <div class="absolute bottom-1 inset-x-2 flex flex-wrap justify-center items-end gap-0.5 z-20 pointer-events-none">
+                            ${Array.from({length: count}).map(() => `
+                                <div class="w-1.5 h-1.5 bg-white border border-slate-300 transform rotate-45 shadow-xs"></div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                // 2. Precipitated Salt Crystals (Sobresaturación)
+                if (b.precipitatedSalt > 0) {
+                    const crystalCount = Math.min(b.precipitatedSalt * 7, 28);
+                    solidsHtml += `
+                        <div class="absolute bottom-0 inset-x-1.5 flex flex-wrap justify-around items-end gap-1 z-25 pointer-events-none py-0.5 border-b border-white/70">
+                            ${Array.from({length: crystalCount}).map((_, i) => `
+                                <div class="w-2.5 h-2.5 bg-gradient-to-tr from-white via-slate-100 to-white border border-slate-300/90 shadow-sm transform rotate-${(i * 25) % 90}"
+                                     style="box-shadow: 0 0 2px rgba(255,255,255,0.9);">
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                // 3. Sand Bed in bottom
+                if (b.sandPortions > 0) {
+                    const sandHeight = Math.min(b.sandPortions * 6, 26);
+                    solidsHtml += `
+                        <div class="absolute bottom-0 inset-x-0 bg-amber-700/85 z-10 border-t border-amber-900/40" style="height: ${sandHeight}px;">
+                            <div class="w-full h-full bg-[radial-gradient(#451a03_1px,transparent_1px)] bg-[size:2px_2px] opacity-40"></div>
+                        </div>
+                    `;
+                }
+
+                // 4. Coarse Stones
+                if (b.stonesPortions > 0) {
+                    const stoneCount = Math.min(b.stonesPortions * 3, 9);
+                    solidsHtml += `
+                        <div class="absolute bottom-1 inset-x-2 flex flex-wrap justify-center items-end gap-1 z-30 pointer-events-none">
+                            ${Array.from({length: stoneCount}).map((_, i) => `
+                                <div class="w-4 h-3.5 bg-stone-700 border border-stone-500 rounded-sm transform rotate-${(i * 35) % 90} shadow-sm"></div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="relative w-36 h-48 glass-beaker flex flex-col justify-end z-20">
+                        <div class="beaker-lip"></div>
+                        ${stirRodHtml}
+                        ${steamHtml}
+
+                        <!-- Beaker Graduations in ml -->
+                        <div class="absolute left-2 inset-y-4 flex flex-col justify-between text-[8px] font-mono font-bold text-slate-500 pointer-events-none z-30">
+                            <div class="flex items-center gap-1"><div class="w-3 border-t-2 border-slate-500"></div><span>250 ml</span></div>
+                            <div class="flex items-center gap-1"><div class="w-2 border-t border-slate-400"></div><span>200</span></div>
+                            <div class="flex items-center gap-1"><div class="w-3 border-t-2 border-slate-500"></div><span>150</span></div>
+                            <div class="flex items-center gap-1"><div class="w-2 border-t border-slate-400"></div><span>100</span></div>
+                            <div class="flex items-center gap-1"><div class="w-3 border-t-2 border-slate-500"></div><span>50 ml</span></div>
+                        </div>
+
+                        <!-- Fluid Layer with Meniscus -->
+                        ${b.waterVolume > 0 ? `
+                            <div class="fluid-layer ${liquidColorClass} ${p.isStirring ? 'vortex-liquid' : ''}" style="height: ${liquidHeightPct}%;">
+                                <div class="meniscus-curve"></div>
+                            </div>
+                        ` : ''}
+
+                        <!-- Settled Solids & Crystals Container -->
+                        ${solidsHtml}
+                    </div>
+                `;
+            }
+
+            // Bunsen Burner underneath
+            if (r.hasBunsenBurner) {
+                html += `
+                    <div class="relative z-10 mt-[-6px] flex flex-col items-center">
+                        <!-- Flame -->
+                        <div class="h-12 w-8 relative flex justify-center">
+                            ${p.isBurnerIgnited ? `
+                                <div class="flame-core absolute bottom-0 w-6 h-12 rounded-[50%_50%_20%_20%] bg-gradient-to-t from-blue-600 via-cyan-400 to-amber-200 shadow-[0_0_15px_rgba(56,189,248,0.9)] origin-bottom">
+                                    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-6 rounded-[50%_50%_20%_20%] bg-blue-700"></div>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <!-- Metal Chimney & Barrel -->
+                        <div class="w-4 h-12 bg-gradient-to-r from-slate-600 via-slate-200 to-slate-700 border-x border-slate-400 shadow-md relative">
+                            <div class="w-full h-2 bg-slate-800 absolute bottom-1"></div>
+                        </div>
+                        <!-- Air Collar & Valve -->
+                        <div class="w-8 h-2.5 bg-gradient-to-r from-amber-600 via-amber-300 to-amber-700 rounded-xs shadow"></div>
+                        <!-- Heavy Cast-Iron Base -->
+                        <div class="w-20 h-4 bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 rounded-t-sm shadow-xl border-t border-slate-500"></div>
+                    </div>
+                `;
+            }
+
+            DOM.interactiveRig.innerHTML = html;
+        }
+
+        function updateControlButtons() {
+            const r = LabState.rig;
+            const b = LabState.beakerContents;
+            const p = LabState.processState;
+            const box = DOM.dynamicActions;
+
+            box.innerHTML = '';
+
+            let hasActions = false;
+
+            // 1. Stirring Rod Action
+            if (r.hasStirRod && (b.saltPortionsAdded > 0 || b.waterVolume > 0)) {
+                hasActions = true;
+                const btn = document.createElement('button');
+                btn.className = 'px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5 transition active:scale-95 disabled:opacity-50';
+                btn.innerHTML = `<span>🌀</span> Agitar Mezcla`;
+                btn.disabled = p.isStirring;
+                btn.onclick = executeStirringProcess;
+                box.appendChild(btn);
+            }
+
+            // 2. Bunsen Burner Ignition / Evaporation
+            if (r.hasBunsenBurner) {
+                hasActions = true;
+                const btn = document.createElement('button');
+                btn.className = `px-3 py-1 ${p.isBurnerIgnited ? 'bg-amber-600 hover:bg-amber-700' : 'bg-orange-500 hover:bg-orange-600'} text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5 transition active:scale-95`;
+                btn.innerHTML = p.isBurnerIgnited ? `<span>🛑</span> Apagar Mechero` : `<span>🔥</span> Encender Mechero`;
+                btn.onclick = toggleBurner;
+                box.appendChild(btn);
+            }
+
+            // 3. Gravity Filtration Action
+            if (r.hasFunnel && r.hasFilterPaper && (b.sandPortions > 0 || b.waterVolume > 0)) {
+                hasActions = true;
+                const btn = document.createElement('button');
+                btn.className = 'px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5 transition active:scale-95 disabled:opacity-50';
+                btn.innerHTML = `<span>💧</span> Filtrar Mezcla`;
+                btn.disabled = p.isFiltering;
+                btn.onclick = executeFiltrationProcess;
+                box.appendChild(btn);
+            }
+
+            // 4. Sieving Action (Tamizado)
+            if (r.hasSieve && (b.stonesPortions > 0 || b.sandPortions > 0)) {
+                hasActions = true;
+                const btn = document.createElement('button');
+                btn.className = 'px-3 py-1 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1.5 transition active:scale-95 disabled:opacity-50';
+                btn.innerHTML = `<span>🕸️</span> Tamizar Sólidos`;
+                btn.disabled = p.isSieving;
+                btn.onclick = executeSievingProcess;
+                box.appendChild(btn);
+            }
+
+            // 5. Disassemble / Clear Accessories
+            if (r.hasStirRod || r.hasFunnel || r.hasSieve) {
+                hasActions = true;
+                const btnRemove = document.createElement('button');
+                btnRemove.className = 'px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-lg transition';
+                btnRemove.innerText = 'Desmontar Accesorios';
+                btnRemove.onclick = () => {
+                    r.hasStirRod = false;
+                    r.hasFunnel = false;
+                    r.hasFilterPaper = false;
+                    r.hasSieve = false;
+                    notify("Accesorios retirados", "Boca del beaker despejada.", "info");
+                    renderRig();
+                    updateControlButtons();
+                };
+                box.appendChild(btnRemove);
+            }
+
+            if (!hasActions) {
+                box.innerHTML = `
+                    <span class="text-xs font-semibold text-slate-400 px-2 py-0.5">
+                        Agrega instrumentos o sustancias para habilitar procedimientos
+                    </span>
+                `;
+            }
+        }
+
+        function executeStirringProcess() {
+            const b = LabState.beakerContents;
+            const p = LabState.processState;
+
+            if (b.waterVolume === 0 && b.saltPortionsAdded > 0) {
+                notify("Falta Solvente", "El NaCl requiere agua líquida (solvente polar) para solvatarse y disolverse.", "warning");
+                return;
+            }
+
+            p.isStirring = true;
+            renderRig();
+            updateControlButtons();
+            notify("Agitación mecánica", "Homogeneizando solutos mediante vórtice con varilla de vidrio...", "chemistry");
+
+            setTimeout(() => {
+                p.isStirring = false;
+
+                // Process solubility dynamics of Salt (NaCl in H2O)
+                const totalSalt = b.saltPortionsAdded + b.dissolvedSalt + b.precipitatedSalt;
+                b.saltPortionsAdded = 0; // all raw salt enters reaction
+
+                if (totalSalt === 0) {
+                    notify("Agua pura agitada", "Sin solutos añadidos.", "info");
+                } 
+                else if (totalSalt === 1) {
+                    // Mezcla Insaturada
+                    b.dissolvedSalt = 1;
+                    b.precipitatedSalt = 0;
+                    notify("Solución Insaturada", "La sal se disolvió completamente en el solvente. Mezcla homogénea transparente.", "success");
+                } 
+                else if (totalSalt === 2) {
+                    // Mezcla Saturada
+                    b.dissolvedSalt = 2;
+                    b.precipitatedSalt = 0;
+                    notify("Solución Saturada", "Se alcanzó la capacidad máxima de solubilidad termodinámica a temperatura ambiente.", "warning");
+                } 
+                else {
+                    // Mezcla Sobresaturada con Precipitación Visible
+                    b.dissolvedSalt = 2;
+                    const excess = totalSalt - 2;
+                    b.precipitatedSalt = excess;
+
+                    notify("¡Solución Sobresaturada!", "El agua no puede disolver más soluto. El exceso precipita lentamente en cristales cúbicos hacia el fondo.", "warning");
+                    
+                    // Trigger visual falling precipitation
+                    triggerVisualPrecipitation(excess);
+                }
+
+                renderRig();
+                updateControlButtons();
+                updateSolutionBadge();
+            }, 1800);
+        }
+
+        function triggerVisualPrecipitation(portions) {
+            const beakerEl = document.querySelector('.glass-beaker');
+            if (!beakerEl) return;
+
+            const crystalCount = portions * 8;
+            for (let i = 0; i < crystalCount; i++) {
+                const crystal = document.createElement('div');
+                crystal.className = 'falling-crystal absolute z-30 w-2.5 h-2.5 bg-white border border-slate-300 shadow-md';
+                crystal.style.left = `${20 + Math.random() * 60}%`;
+                crystal.style.top = `${25 + Math.random() * 20}%`;
+                crystal.style.setProperty('--fall-dist', `${90 + Math.random() * 30}px`);
+                crystal.style.setProperty('--fall-rot', `${Math.random() * 180}deg`);
+                crystal.style.setProperty('--fall-time', `${1.2 + Math.random() * 1.2}s`);
+
+                beakerEl.appendChild(crystal);
+                setTimeout(() => crystal.remove(), 2600);
+            }
+        }
+
+        let heatingInterval = null;
+
+        function toggleBurner() {
+            const p = LabState.processState;
+            const b = LabState.beakerContents;
+
+            p.isBurnerIgnited = !p.isBurnerIgnited;
+
+            if (p.isBurnerIgnited) {
+                notify("Mechero encendido", "Llama de combustión activa generando transferencia de calor.", "heat");
+                
+                if (b.waterVolume > 0) {
+                    p.isEvaporating = true;
+                    notify("Iniciando Evaporación", "Punto de ebullición alcanzado: el H₂O líquida pasa a vapor de agua gaseoso.", "heat");
+                    
+                    heatingInterval = setInterval(() => {
+                        if (b.waterVolume > 0) {
+                            b.waterVolume -= 25;
+                            if (b.waterVolume <= 0) {
+                                b.waterVolume = 0;
+                                p.isEvaporating = false;
+                                clearInterval(heatingInterval);
+                                heatingInterval = null;
+
+                                // Crystallization check
+                                const totalSalt = b.dissolvedSalt + b.precipitatedSalt;
+                                if (totalSalt > 0) {
+                                    b.precipitatedSalt = totalSalt;
+                                    b.dissolvedSalt = 0;
+                                    notify("Cristalización Completa", "Todo el solvente se evaporó. Los cristales de NaCl quedaron separados y recuperados en el fondo seco.", "success");
+                                } else {
+                                    notify("Evaporación terminada", "El beaker ha quedado completamente seco.", "info");
+                                }
+                            }
+                            renderRig();
+                            updateSolutionBadge();
+                        }
+                    }, 1400);
+                }
+            } else {
+                p.isEvaporating = false;
+                if (heatingInterval) {
+                    clearInterval(heatingInterval);
+                    heatingInterval = null;
+                }
+                notify("Mechero apagado", "Cese de transferencia térmica.", "info");
+            }
+
+            renderRig();
+            updateControlButtons();
+        }
+
+        function executeFiltrationProcess() {
+            const b = LabState.beakerContents;
+            const f = LabState.funnelContents;
+            const p = LabState.processState;
+
+            if (b.sandPortions === 0 && b.waterVolume === 0) {
+                notify("Nada que filtrar", "No hay mezcla en suspensión que separar por filtración.", "warning");
+                return;
+            }
+
+            p.isFiltering = true;
+            renderRig();
+            updateControlButtons();
+            notify("Filtración en marcha", "El líquido drena por gravedad a través del papel filtro; los sólidos insolubles son retenidos.", "chemistry");
+
+            setTimeout(() => {
+                p.isFiltering = false;
+
+                if (b.sandPortions > 0) {
+                    f.trappedSand += b.sandPortions;
+                    b.sandPortions = 0;
+                    f.isWet = true;
+                    notify("Filtración Exitosa", "La arena húmeda quedó retenida en el papel filtro. El líquido filtrado limpio está en el beaker inferior.", "success");
+                } else {
+                    notify("Líquido filtrado", "El agua pasó a través de los poros del papel sin retener sólidos.", "info");
+                }
+
+                renderRig();
+                updateControlButtons();
+                updateSolutionBadge();
+            }, 2600);
+        }
+
+        function executeSievingProcess() {
+            const b = LabState.beakerContents;
+            const s = LabState.sieveContents;
+            const p = LabState.processState;
+
+            if (b.stonesPortions === 0 && b.sandPortions === 0) {
+                notify("Sin mezcla sólida", "Se requiere una mezcla heterogénea de diferentes granulometrías.", "warning");
+                return;
+            }
+
+            p.isSieving = true;
+            renderRig();
+            updateControlButtons();
+            notify("Tamizado en curso", "Separando sólidos por diferencia de tamaño de partícula a través de la malla...", "info");
+
+            setTimeout(() => {
+                p.isSieving = false;
+
+                if (b.stonesPortions > 0) {
+                    s.trappedStones += b.stonesPortions;
+                    b.stonesPortions = 0;
+                    notify("Tamizado Exitoso", "Las piedras grandes quedaron retenidas en la malla del tamiz; la arena fina y los líquidos cayeron al beaker.", "success");
+                } else {
+                    notify("Tamizado completado", "Las partículas finas atravesaron los poros de la malla.", "info");
+                }
+
+                renderRig();
+                updateControlButtons();
+                updateSolutionBadge();
+            }, 2000);
+        }
+
+        function updateSolutionBadge() {
+            const b = LabState.beakerContents;
+            const badge = DOM.solutionBadge;
+
+            let text = "Beaker: Vacío";
+            let color = "bg-slate-100 text-slate-600 border-slate-200";
+
+            if (b.waterVolume > 0) {
+                if (b.sandPortions > 0 || b.stonesPortions > 0) {
+                    text = `Heterogénea (${b.waterVolume}ml H₂O + Sólidos)`;
+                    color = "bg-amber-100 text-amber-900 border-amber-300";
+                } else if (b.precipitatedSalt > 0) {
+                    text = `Sobresaturada (${b.precipitatedSalt} sol. precipitado)`;
+                    color = "bg-rose-100 text-rose-800 border-rose-300 font-bold";
+                } else if (b.dissolvedSalt === 2) {
+                    text = `Saturada (Límite 100%)`;
+                    color = "bg-yellow-100 text-yellow-800 border-yellow-300";
+                } else if (b.dissolvedSalt === 1) {
+                    text = `Insaturada (Homogénea)`;
+                    color = "bg-emerald-100 text-emerald-800 border-emerald-300";
+                } else if (b.saltPortionsAdded > 0) {
+                    text = `Sal en suspensión (Sin agitar)`;
+                    color = "bg-slate-200 text-slate-800 border-slate-300";
+                } else {
+                    text = `Solvente Puro (${b.waterVolume} ml)`;
+                    color = "bg-cyan-100 text-cyan-800 border-cyan-300";
+                }
+            } else if (b.precipitatedSalt > 0 || b.saltPortionsAdded > 0 || b.sandPortions > 0 || b.stonesPortions > 0) {
+                text = "Fase Sólida Seca";
+                color = "bg-stone-200 text-stone-800 border-stone-300";
+            }
+
+            badge.className = `px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-semibold border ${color}`;
+            badge.innerText = text;
+        }
+
+        DOM.btnResetAll.addEventListener('click', () => {
+            if (heatingInterval) clearInterval(heatingInterval);
+
+            LabState.rig.hasBeaker = false;
+            LabState.rig.hasFunnel = false;
+            LabState.rig.hasFilterPaper = false;
+            LabState.rig.hasStirRod = false;
+            LabState.rig.hasBunsenBurner = false;
+            LabState.rig.hasSieve = false;
+
+            LabState.beakerContents.waterVolume = 0;
+            LabState.beakerContents.saltPortionsAdded = 0;
+            LabState.beakerContents.dissolvedSalt = 0;
+            LabState.beakerContents.precipitatedSalt = 0;
+            LabState.beakerContents.sandPortions = 0;
+            LabState.beakerContents.stonesPortions = 0;
+
+            LabState.funnelContents.trappedSand = 0;
+            LabState.funnelContents.isWet = false;
+            LabState.sieveContents.trappedStones = 0;
+
+            LabState.processState.isBurnerIgnited = false;
+            LabState.processState.isEvaporating = false;
+            LabState.processState.isStirring = false;
+            LabState.processState.isFiltering = false;
+            LabState.processState.isSieving = false;
+
+            DOM.universalStand.classList.remove('opacity-40');
+            DOM.universalStand.classList.add('opacity-20');
+
+            notify("Mesa Despejada", "Todos los instrumentos lavados y reactivos devueltos al almacén.", "info");
+            renderRig();
+            updateControlButtons();
+            updateSolutionBadge();
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderRig();
+            updateControlButtons();
+            updateSolutionBadge();
+            notify("Laboratorio Listo", "Arrastra el Beaker al soporte de la mesa para comenzar tu montaje experimental.", "chemistry");
+        });
+    </script>
+<a data-volver-menu href="../" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;z-index:2147483647;padding:7px 13px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:600 13px/1 system-ui,sans-serif;text-decoration:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)">‹ Menú</a>
+</body>
+</html>
