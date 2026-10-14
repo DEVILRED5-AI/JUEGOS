@@ -301,6 +301,20 @@
   }
   .gear:active { transform: scale(.92); }
   .card.pending { filter: saturate(.4) brightness(.85); }
+  .right { flex: none; }
+  .brand { white-space: nowrap; }
+  .gear.on { border-color: #ff7a8a; color: #ff7a8a; background: rgba(255,122,138,.14); }
+  .borrando .card { border-color: rgba(255,77,106,.55); }
+  .kill {
+    position: absolute; top: 10px; right: 10px; z-index: 3;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #ff4d6a; color: #fff;
+    display: grid; place-items: center;
+    font-size: 15px; font-weight: 700; line-height: 1;
+    box-shadow: 0 6px 16px -4px rgba(255,77,106,.7);
+    pointer-events: none;
+  }
+  .primary.danger { background: linear-gradient(145deg, #ff6b7d, #ff3d5a); color: #fff; }
   .add { pointer-events: auto; cursor: pointer; }
   .add:active { transform: scale(.96) !important; border-color: var(--gold); }
 
@@ -440,6 +454,7 @@
     </div>
     <div class="right">
       <div class="pill" id="contador"></div>
+      <button type="button" class="gear" id="btn-borrar" aria-label="Eliminar juegos">🗑</button>
       <button type="button" class="gear" id="btn-ajustes" aria-label="Conexión con GitHub">⚙︎</button>
     </div>
   </div>
@@ -508,6 +523,18 @@
   <button type="button" class="ghost" id="c-close">Cerrar</button>
 </section>
 
+<section class="sheet" id="sheet-del" role="dialog" aria-modal="true" aria-labelledby="t-del" hidden>
+  <div class="grab"></div>
+  <h2 id="t-del">Eliminar juego</h2>
+  <p class="lead" id="d-lead"></p>
+  <label>Clave
+    <input type="password" id="d-clave" inputmode="numeric" pattern="[0-9]*" maxlength="12" placeholder="••••" autocomplete="off">
+  </label>
+  <p class="msg" id="d-msg" role="status"></p>
+  <button type="button" class="primary danger" id="d-go">Eliminar</button>
+  <button type="button" class="ghost" id="d-cancel">Cancelar</button>
+</section>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -517,7 +544,20 @@ var JUEGOS_BASE = [
   { nombre: 'Duelo Relámpago', desc: 'Reflejos para dos en el mismo celular. ¡Toca primero cuando se ilumine!', ruta: 'duelo-relampago/', emoji: '⚡', tag: '2 jugadores', c1: '#ffcf5c', c2: '#ff8a3d' }
 ];
 var GH = { owner: 'DEVILRED5-AI', repo: 'JUEGOS' };
-var JUEGOS = JUEGOS_BASE.slice();
+var CLAVE_BORRAR = '1979'; // clave que se pide para eliminar un juego
+var modoBorrar = false;
+var juegoPorBorrar = null;
+function leerListaGuardada() {
+  try {
+    var x = JSON.parse(localStorage.getItem('listaJuegos') || 'null');
+    if (Array.isArray(x)) return x.filter(juegoValido);
+  } catch (e) {}
+  return null;
+}
+function guardarLista(l) {
+  try { localStorage.setItem('listaJuegos', JSON.stringify(l)); } catch (e) {}
+}
+var JUEGOS = leerListaGuardada() || JUEGOS_BASE.slice();
 var pendientes = {}; // ruta -> entrada, mientras GitHub Pages termina de publicar
 
 function $(id) { return document.getElementById(id); }
@@ -554,6 +594,7 @@ var scrim = $('scrim');
 var hojaAbierta = null;
 function abrirHoja(h) {
   if (hojaAbierta === h) return;
+  $('toast').classList.remove('on'); // que el aviso no tape los botones de la hoja
   cerrarHoja();
   clearTimeout(h._t);
   hojaAbierta = h;
@@ -617,9 +658,16 @@ function renderLista() {
     foot.append(tag, go);
 
     a.append(icon, n, d, foot);
+    if (modoBorrar) {
+      var kill = document.createElement('span');
+      kill.className = 'kill';
+      kill.textContent = '✕';
+      a.append(kill);
+    }
 
     a.addEventListener('click', function (e) {
       e.preventDefault();
+      if (modoBorrar) { abrirBorrar(j); return; }
       if (pendientes[j.ruta]) { toast('Se está publicando. Prueba de nuevo en un minuto.'); return; }
       document.body.classList.add('leaving');
       setTimeout(function () { window.location.href = a.href; }, 200);
@@ -628,7 +676,11 @@ function renderLista() {
     lista.append(a);
   });
 
-  // Tarjeta "Agregar juego"
+  lista.classList.toggle('borrando', modoBorrar);
+  $('btn-borrar').classList.toggle('on', modoBorrar);
+
+  // Tarjeta "Agregar juego" (no se muestra en el modo eliminar)
+  if (modoBorrar) { $('contador').textContent = JUEGOS.length + (JUEGOS.length === 1 ? ' juego' : ' juegos'); return; }
   var add = document.createElement('div');
   add.className = 'card soon add';
   add.setAttribute('role', 'button');
@@ -648,7 +700,7 @@ function cargarLista() {
     .then(function (datos) {
       if (!Array.isArray(datos)) return;
       var nueva = datos.filter(juegoValido);
-      if (!nueva.length) return;
+      guardarLista(nueva);
       // Conserva los que aún se están publicando
       Object.keys(pendientes).forEach(function (ruta) {
         if (!nueva.some(function (j) { return j.ruta === ruta; })) nueva.push(pendientes[ruta]);
@@ -848,7 +900,7 @@ async function leerSha(ruta, rama) {
   }
 }
 
-async function actualizarListaRemota(rama, entrada) {
+async function editarListaRemota(rama, mensaje, editar) {
   for (var intento = 0; intento < 2; intento++) {
     var f = await leerSha('juegos.json', rama);
     var actual = null;
@@ -859,14 +911,10 @@ async function actualizarListaRemota(rama, entrada) {
       actual = JUEGOS.filter(function (j) { return !pendientes[j.ruta]; });
       if (!actual.length) actual = JUEGOS_BASE.slice();
     }
-    actual = actual.filter(juegoValido);
-    var idx = -1;
-    actual.forEach(function (j, i) { if (j.ruta === entrada.ruta) idx = i; });
-    if (idx >= 0) actual[idx] = Object.assign({}, actual[idx], entrada);
-    else actual.push(entrada);
+    actual = editar(actual.filter(juegoValido));
     try {
       await gh('PUT', '/contents/juegos.json', {
-        message: 'Actualizar lista de juegos: ' + entrada.nombre,
+        message: mensaje,
         content: aB64(JSON.stringify(actual, null, 2) + '\n'),
         branch: rama,
         sha: f ? f.sha : undefined
@@ -878,6 +926,95 @@ async function actualizarListaRemota(rama, entrada) {
     }
   }
 }
+
+function actualizarListaRemota(rama, entrada) {
+  return editarListaRemota(rama, 'Actualizar lista de juegos: ' + entrada.nombre, function (lista) {
+    var idx = -1;
+    lista.forEach(function (j, i) { if (j.ruta === entrada.ruta) idx = i; });
+    if (idx >= 0) lista[idx] = Object.assign({}, lista[idx], entrada);
+    else lista.push(entrada);
+    return lista;
+  });
+}
+
+/* ---------- Eliminar juegos (pide clave) ---------- */
+var hojaDel = $('sheet-del');
+function rutaApi(p) { return p.split('/').map(encodeURIComponent).join('/'); }
+
+async function listarArchivos(carpeta, rama) {
+  var f;
+  try { f = await gh('GET', '/contents/' + rutaApi(carpeta) + '?ref=' + encodeURIComponent(rama)); }
+  catch (e) { if (e instanceof GhError && e.status === 404) return []; throw e; }
+  var salida = [];
+  var items = Array.isArray(f) ? f : [f];
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].type === 'dir') salida = salida.concat(await listarArchivos(items[i].path, rama));
+    else if (items[i].type === 'file') salida.push(items[i]);
+  }
+  return salida;
+}
+
+$('btn-borrar').addEventListener('click', function () {
+  if (!modoBorrar && !JUEGOS.length) { toast('No hay juegos para eliminar.'); return; }
+  modoBorrar = !modoBorrar;
+  renderLista();
+  if (modoBorrar) toast('Toca el juego que quieras eliminar. Vuelve a tocar 🗑 para salir.');
+});
+
+function abrirBorrar(j) {
+  if (!leerToken()) { abrirAjustes('Primero conecta tu cuenta: pega tu token de GitHub.'); return; }
+  juegoPorBorrar = j;
+  $('d-lead').textContent = 'Vas a eliminar «' + j.nombre + '» de GitHub (carpeta ' + j.ruta + '). Escribe la clave para confirmar.';
+  $('d-clave').value = '';
+  msg($('d-msg'), '');
+  abrirHoja(hojaDel);
+}
+$('d-cancel').addEventListener('click', cerrarHoja);
+
+$('d-go').addEventListener('click', async function () {
+  var boton = this, m = $('d-msg'), j = juegoPorBorrar;
+  if (!j) return;
+  if ($('d-clave').value.trim() !== CLAVE_BORRAR) {
+    msg(m, 'Clave incorrecta.', 'err');
+    $('d-clave').value = '';
+    return;
+  }
+  boton.disabled = true;
+  try {
+    msg(m, 'Conectando con GitHub…');
+    var repo = await gh('GET', '');
+    var rama = repo.default_branch || 'main';
+
+    msg(m, 'Eliminando los archivos del juego…');
+    var carpeta = j.ruta.replace(/\/$/, '');
+    var archivos = await listarArchivos(carpeta, rama);
+    for (var i = 0; i < archivos.length; i++) {
+      if (archivos[i].path.indexOf(carpeta + '/') !== 0) continue; // nunca fuera de su carpeta
+      await gh('DELETE', '/contents/' + rutaApi(archivos[i].path), {
+        message: 'Eliminar juego: ' + j.nombre,
+        sha: archivos[i].sha,
+        branch: rama
+      });
+    }
+
+    msg(m, 'Actualizando la lista…');
+    var nueva = await editarListaRemota(rama, 'Quitar de la lista: ' + j.nombre, function (lista) {
+      return lista.filter(function (x) { return x.ruta !== j.ruta; });
+    });
+
+    JUEGOS = nueva;
+    guardarLista(nueva);
+    delete pendientes[j.ruta];
+    juegoPorBorrar = null;
+    if (!JUEGOS.length) modoBorrar = false;
+    renderLista();
+    cerrarHoja();
+    toast('«' + j.nombre + '» eliminado. GitHub tarda cerca de un minuto en reflejarlo.');
+  } catch (e) {
+    msg(m, textoError(e), 'err');
+  }
+  boton.disabled = false;
+});
 
 $('f-go').addEventListener('click', async function () {
   var boton = this, m = $('f-msg');
@@ -922,6 +1059,7 @@ $('f-go').addEventListener('click', async function () {
     var nuevaLista = await actualizarListaRemota(rama, entrada);
 
     JUEGOS = nuevaLista;
+    guardarLista(nuevaLista);
     if (!existia) {
       pendientes[entrada.ruta] = entrada;
       setTimeout(function () { delete pendientes[entrada.ruta]; cargarLista(); }, 75000);
