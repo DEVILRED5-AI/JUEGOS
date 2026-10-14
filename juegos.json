@@ -7,14 +7,5 @@
     "tag": "2 jugadores",
     "c1": "#ffcf5c",
     "c2": "#ff8a3d"
-  },
-  {
-    "nombre": "Simulador Laboratorio de Química",
-    "desc": "",
-    "ruta": "simulador-laboratorio-de-quimica/",
-    "emoji": "⚗️",
-    "tag": "1 jugador",
-    "c1": "#ffcf5c",
-    "c2": "#ff8a3d"
   }
 ]
