@@ -7,14 +7,5 @@
     "tag": "2 jugadores",
     "c1": "#ffcf5c",
     "c2": "#ff8a3d"
-  },
-  {
-    "nombre": "Cubo 3x3",
-    "desc": "Armar el cubo",
-    "ruta": "cubo-3x3/",
-    "emoji": "🎮",
-    "tag": "1 jugador",
-    "c1": "#ffcf5c",
-    "c2": "#ff8a3d"
   }
 ]
