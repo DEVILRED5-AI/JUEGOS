@@ -25,5 +25,14 @@
     "tag": "1 jugador",
     "c1": "#ffcf5c",
     "c2": "#ff8a3d"
+  },
+  {
+    "nombre": "Grabar Voz",
+    "desc": "",
+    "ruta": "grabar-voz/",
+    "emoji": "🎤",
+    "tag": "1 jugador",
+    "c1": "#ffcf5c",
+    "c2": "#ff8a3d"
   }
 ]
