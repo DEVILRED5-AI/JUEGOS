@@ -16,5 +16,14 @@
     "tag": "1 jugador",
     "c1": "#ffcf5c",
     "c2": "#ff8a3d"
+  },
+  {
+    "nombre": "Estudio del relato sonoro",
+    "desc": "Grabadora de relatos",
+    "ruta": "estudio-del-relato-sonoro/",
+    "emoji": "🎤",
+    "tag": "1 jugador",
+    "c1": "#ffcf5c",
+    "c2": "#ff8a3d"
   }
 ]
