@@ -1,0 +1,115 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Estudio del relato sonoro</title><meta name="description" content="Graba tu voz, límpiala y mézclala con efectos y música">
+<style>
+:root{--bg:#fff;--fg:#1c1c1e;--card:#f3f3f5;--ac:#d40000;--mu:#6b6b70;--bd:#dcdce0;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121214;--fg:#eeeef0;--card:#1e1e22;--ac:#ff4a4a;--mu:#a0a0a8;--bd:#34343a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121214;--fg:#eeeef0;--card:#1e1e22;--ac:#ff4a4a;--mu:#a0a0a8;--bd:#34343a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:720px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:.2em 0}h2{font-size:1.05rem;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:12px 0}
+.mu{color:var(--mu);font-size:.88rem}
+button,.file{font:inherit;border:1px solid var(--bd);background:var(--bg);color:var(--fg);border-radius:10px;padding:10px 14px;cursor:pointer}
+button.p{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
+button:disabled{opacity:.45}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+textarea,input[type=text]{width:100%;box-sizing:border-box;font:inherit;background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:10px;padding:8px}
+textarea{min-height:90px}
+.cue{border-top:1px solid var(--bd);padding:10px 0;display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center}
+.cue .l{font-weight:500}
+.cue .ctl{grid-column:1/4;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.85rem}
+.cue input[type=number]{width:70px;font:inherit;background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:8px;padding:4px}
+.cue input[type=range]{width:110px}
+.opt{display:flex;gap:10px;align-items:center;margin:8px 0;flex-wrap:wrap}.opt label{min-width:150px}
+.ok{color:#1a8a3a}.bad{color:var(--ac)}
+#msg{min-height:1.3em}
+</style></head><body><main>
+<h1>🎙️ Estudio del relato sonoro</h1>
+<p class="mu">Graba tu propia voz, límpiala y deja que la app coloque música y efectos sintetizados. Todo ocurre en tu dispositivo: no se sube ningún audio.</p>
+
+<div class="card"><h2>1. Tu guion (para leerlo mientras grabas)</h2>
+<textarea id="gui" placeholder="Pega aquí tu guion. Habla como si se lo contaras a alguien, no lo leas de corrido."></textarea></div>
+
+<div class="card"><h2>2. Tu voz</h2>
+<div class="row"><button class="p" id="rb">● Grabar voz</button><span id="tm" class="mu">0:00</span>
+<label class="file">Subir audio<input id="up" type="file" accept="audio/*" hidden></label>
+<button id="pv" disabled>▶ Escuchar mi voz</button></div>
+<p class="mu" id="dur">Aún no hay voz. Si el micrófono no funciona aquí, graba con la grabadora del celular y súbela.</p></div>
+
+<div class="card"><h2>3. Ajustes de la voz</h2>
+<div class="opt"><label>Volumen de la voz <span id="vgv">0 dB</span></label><input id="vg" type="range" min="-6" max="9" value="0"></div>
+<div class="opt"><label><input id="hp" type="checkbox" checked> Quitar graves y ruido de fondo</label>
+<label><input id="cm" type="checkbox" checked> Parejar volumen (compresor)</label>
+<label><input id="gt" type="checkbox" checked> Silenciar ruido en pausas</label></div>
+<div class="opt"><label>Bajar música/efectos al hablar <span id="dkv">55%</span></label><input id="dk" type="range" min="0" max="90" value="55"></div></div>
+
+<div class="card"><h2>4. Música y efectos</h2>
+<p class="mu">Los tiempos se reparten según el orden de tu guion. Ajusta inicio y fin (en segundos) donde tu voz llegue a cada momento, o desactiva lo que no quieras. Con ▶ escuchas cada sonido.</p>
+<div id="cues"></div></div>
+
+<div class="card"><h2>5. Mezclar y entregar</h2>
+<div class="row"><button class="p" id="mx" disabled>Mezclar</button><button id="pm" disabled>▶ Escuchar mezcla</button><button id="st" disabled>■ Parar</button></div>
+<p class="mu" id="mxs"></p>
+<label class="mu">Nombre del archivo (tu nombre completo)</label>
+<input type="text" id="nm" placeholder="Nombres y Apellidos">
+<div class="row" style="margin-top:8px"><button class="p" id="ex" disabled>Guardar audio</button></div>
+<p class="mu">Guardar graba la mezcla en tiempo real, así que tarda lo que dura el audio. Se guarda como .mp4 o .webm (suena en cualquier celular). Luego súbelo a Drive con acceso por enlace y envíalo al correo del profesor. Recuerda decir tu nombre completo y “Seminario de Derechos Humanos y Buen vivir” al final de tu grabación.</p>
+<p id="msg" class="bad"></p></div>
+</main>
+<script>
+const $=s=>document.querySelector(s),S={voice:null,mix:null,src:null,rec:null},AC=new(window.AudioContext||window.webkitAudioContext)();
+const mf=n=>440*Math.pow(2,(n-69)/12),rnd=(a,b)=>a+Math.random()*(b-a),fmt=s=>Math.floor(s/60)+":"+String(Math.floor(s%60)).padStart(2,"0");
+const msg=t=>$('#msg').textContent=t||"";
+function nz(c){if(!c._n){const b=c.createBuffer(1,c.sampleRate*2,c.sampleRate),a=b.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1;c._n=b}return c._n}
+function ns(c,o,t,d,ft,fq,q,v,atk=.05,rel=.1){const s=c.createBufferSource();s.buffer=nz(c);s.loop=true;const f=c.createBiquadFilter();f.type=ft;f.frequency.value=fq;f.Q.value=q;const g=c.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+Math.min(atk,d/2));g.gain.setValueAtTime(v,t+Math.max(Math.min(atk,d/2),d-rel));g.gain.linearRampToValueAtTime(0,t+d);s.connect(f);f.connect(g);g.connect(o);s.start(t);s.stop(t+d+.05)}
+function tone(c,o,t,fr,d,ty,v,atk=.01,lp=3000){const s=c.createOscillator();s.type=ty;s.frequency.value=fr;const f=c.createBiquadFilter();f.frequency.value=lp;const g=c.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+atk);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(f);f.connect(g);g.connect(o);s.start(t);s.stop(t+d+.05)}
+const MU={pno:{ch:[[57,60,64],[53,57,60],[48,52,55],[55,59,62]],st:.7,ty:'triangle',nd:2.6,lp:2000,v:.5},
+gtr:{ch:[[52,55,59],[48,52,55],[55,59,62],[50,54,57]],st:.6,ty:'sawtooth',nd:1.2,lp:1400,v:.22},
+vln:{ch:[[50,53,57],[46,50,53],[53,57,60],[48,52,55]],st:4,ty:'sawtooth',nd:5,lp:1500,v:.16,pad:1,atk:1.2},
+pno2:{ch:[[60,64,67],[55,59,62],[57,60,64],[53,57,60]],st:.6,ty:'triangle',nd:2.4,lp:2600,v:.5,oct:12}};
+function mus(c,o,t,d,k){const m=MU[k];let i=0;for(let x=0;x<d;x+=m.st,i++){if(m.pad){m.ch[Math.floor(x/m.st)%4].forEach(n=>tone(c,o,t+x,mf(n),m.nd,m.ty,m.v,m.atk,m.lp))}else{const ch=m.ch[Math.floor(i/4)%4];tone(c,o,t+x,mf(ch[[0,1,2,1][i%4]]+(m.oct||0)),m.nd,m.ty,m.v,.01,m.lp)}}}
+const steps=(c,o,t,d)=>{for(let x=0;x<d;x+=.55)ns(c,o,t+x,.09,'lowpass',700,.5,.9,.005,.05)};
+const G={pno:(c,o,t,d)=>mus(c,o,t,d,'pno'),gtr:(c,o,t,d)=>mus(c,o,t,d,'gtr'),vln:(c,o,t,d)=>mus(c,o,t,d,'vln'),pno2:(c,o,t,d)=>mus(c,o,t,d,'pno2'),
+rain:(c,o,t,d)=>{ns(c,o,t,d,'highpass',1200,.3,.3,2,2);ns(c,o,t,d,'lowpass',400,.3,.2,2,2)},
+storm:(c,o,t,d)=>{ns(c,o,t,d,'highpass',1000,.3,.5,2,2);ns(c,o,t,d,'lowpass',350,.3,.4,2,2);ns(c,o,t+d*.5,Math.min(3,d/2),'lowpass',140,.5,1.2,.2,1.5)},
+wind:(c,o,t,d)=>ns(c,o,t,d,'bandpass',350,.7,.8,Math.min(3,d/3),3),steps,
+stat:(c,o,t,d)=>{for(let x=0;x<d;x+=rnd(.3,.9))ns(c,o,t+x,rnd(.05,.25),'highpass',3500,.5,.3,.01,.05)},
+shots:(c,o,t,d)=>{for(let x=rnd(0,.5);x<d;x+=rnd(.25,1)){ns(c,o,t+x,.25,'lowpass',2200,.5,1,.002,.2);ns(c,o,t+x+.18,.5,'lowpass',500,.5,.3,.05,.35)}},
+heart:(c,o,t,d)=>{for(let x=0;x<d;x+=.85){tone(c,o,t+x,55,.2,'sine',1.2,.01,200);tone(c,o,t+x+.25,50,.18,'sine',.9,.01,200)}},
+city:(c,o,t,d)=>{ns(c,o,t,d,'bandpass',600,.3,.25,2,2);steps(c,o,t,d)},
+clock:(c,o,t,d)=>{for(let x=0;x<d;x++)tone(c,o,t+x,2200,.04,'square',.25,.001,3000);for(let x=0;x<d;x+=.4)ns(c,o,t+x,.15,'bandpass',4500,2,.12,.02,.05)},
+door:(c,o,t,d)=>{const s=c.createOscillator(),f=c.createBiquadFilter(),g=c.createGain();s.type='sawtooth';s.frequency.setValueAtTime(140,t);s.frequency.linearRampToValueAtTime(260,t+d);f.type='lowpass';f.frequency.value=700;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.18,t+d*.3);g.gain.linearRampToValueAtTime(0,t+d);s.connect(f);f.connect(g);g.connect(o);s.start(t);s.stop(t+d+.1)},
+murm:(c,o,t,d)=>{for(let x=0;x<d;x+=rnd(.4,1))ns(c,o,t+x,rnd(.2,.6),'bandpass',rnd(250,500),1.5,.5,.08,.1)},
+phone:(c,o,t,d)=>{[0,.35].forEach(x=>tone(c,o,t+x,160,.25,'square',.5,.01,500));tone(c,o,t+1.3,880,.3,'sine',.6);tone(c,o,t+1.5,1320,.5,'sine',.6)},
+bird:(c,o,t,d)=>{for(let x=0;x<d;x+=rnd(.2,.8)){const f0=rnd(2500,4200),s=c.createOscillator(),g=c.createGain();s.frequency.setValueAtTime(f0,t+x);s.frequency.exponentialRampToValueAtTime(f0*1.4,t+x+.08);g.gain.setValueAtTime(0,t+x);g.gain.linearRampToValueAtTime(.12,t+x+.02);g.gain.linearRampToValueAtTime(0,t+x+.12);s.connect(g);g.connect(o);s.start(t+x);s.stop(t+x+.15)}},
+breath:(c,o,t,d)=>ns(c,o,t,d,'bandpass',700,.6,.6,d*.4,d*.4)};
+const MUS=/^(pno|gtr|vln|pno2)$/;
+function sched(c,dest,k,s,e,v){const d=e-s;if(d<=0)return;const g=c.createGain(),fi=Math.min(MUS.test(k)?2:.4,d/3);g.gain.setValueAtTime(0,s);g.gain.linearRampToValueAtTime(v,s+fi);g.gain.setValueAtTime(v,Math.max(s+fi,e-fi));g.gain.linearRampToValueAtTime(0,e);g.connect(dest);G[k](c,g,s,d)}
+const C=[['Música: piano melancólico','pno',0,.5,.5],['Lluvia suave','rain',0,.1,.5],['Viento','wind',.13,.18,.5],['Pasos apresurados','steps',.14,.18,.5],['Estática de radio lejana','stat',.16,.2,.3],['Lluvia fuerte y trueno','storm',.19,.27,.6],['Disparos lejanos con eco','shots',.23,.27,.35],['Latidos del corazón','heart',.27,.32,.6],['Música: guitarra lenta','gtr',.33,.52,.45],['Pasos en asfalto y ciudad','city',.33,.39,.4],['Lápiz y reloj','clock',.44,.5,.5],['Puerta que se abre','door',.56,.59,.5],['Murmullos de discusión','murm',.62,.66,.4],['Celular: vibración y aviso','phone',.7,.73,.6],['Música: violín triste','vln',.73,.85,.45],['Viento solitario','wind',.81,.87,.4],['Música: piano cálido','pno2',.87,1,.5],['Pájaros al amanecer','bird',.88,.96,.4],['Respiración profunda','breath',.9,.93,.4],['Pasos que se alejan','steps',.96,.995,.4]].map(a=>({n:a[0],k:a[1],f:a[2],d:a[3],v:a[4],on:true}));
+function place(D){C.forEach(c=>{c.s=+(c.f*D).toFixed(1);c.e=+(c.d*D).toFixed(1)})}
+function draw(){$('#cues').innerHTML="";C.forEach((c,i)=>{const d=document.createElement('div');d.className='cue';d.innerHTML=`<input type="checkbox" ${c.on?'checked':''}><span class="l">${c.n}</span><button>▶</button><div class="ctl">Inicio <input type="number" step="0.5" min="0" value="${c.s}"> Fin <input type="number" step="0.5" min="0" value="${c.e}"> Volumen <input type="range" min="0" max="100" value="${c.v*100}"></div>`;const q=d.querySelectorAll('input');q[0].onchange=e=>c.on=e.target.checked;q[1].onchange=e=>c.s=+e.target.value;q[2].onchange=e=>c.e=+e.target.value;q[3].oninput=e=>c.v=e.target.value/100;d.querySelector('button').onclick=async()=>{await AC.resume();const t=AC.currentTime+.05;sched(AC,AC.destination,c.k,t,t+Math.min(6,Math.max(2,c.e-c.s)),c.v)};$('#cues').appendChild(d)})}
+place(240);draw();
+$('#vg').oninput=e=>$('#vgv').textContent=e.target.value+' dB';$('#dk').oninput=e=>$('#dkv').textContent=e.target.value+'%';
+async function load(b){try{await AC.resume();S.voice=await AC.decodeAudioData(await b.arrayBuffer());const D=S.voice.duration,ok=D>=180&&D<=300;$('#dur').innerHTML=`Duración de tu voz: <b>${fmt(D)}</b> — <span class="${ok?'ok':'bad'}">${ok?'dentro de lo pedido (3 a 5 min)':'el ejercicio pide entre 3 y 5 minutos'}</span>`;place(D);draw();['pv','mx'].forEach(x=>$('#'+x).disabled=false);S.mix=null;['pm','ex'].forEach(x=>$('#'+x).disabled=true);msg()}catch(e){msg('No pude leer ese audio. Prueba con otro formato (m4a, mp3, wav).')}}
+$('#up').onchange=e=>e.target.files[0]&&load(e.target.files[0]);
+$('#rb').onclick=async()=>{if(S.rec){S.rec.stop();return}try{const st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}}),mr=new MediaRecorder(st),ch=[];mr.ondataavailable=e=>ch.push(e.data);mr.onstop=()=>{st.getTracks().forEach(t=>t.stop());clearInterval(S.tm);S.rec=null;$('#rb').textContent='● Grabar voz';load(new Blob(ch,{type:mr.mimeType}))};mr.start();S.rec=mr;const t0=Date.now();S.tm=setInterval(()=>$('#tm').textContent=fmt((Date.now()-t0)/1000),250);$('#rb').textContent='■ Detener';msg()}catch(e){msg('No pude usar el micrófono aquí. Graba con la grabadora del celular y usa “Subir audio”.')}};
+function play(buf){stop();AC.resume();const s=AC.createBufferSource();s.buffer=buf;s.connect(AC.destination);s.start();S.src=s;s.onended=()=>{if(S.src===s)S.src=null}}
+function stop(){if(S.src){try{S.src.stop()}catch(e){}S.src=null}}
+$('#pv').onclick=()=>play(S.voice);$('#pm').onclick=()=>play(S.mix);$('#st').onclick=stop;
+function envel(b){const a=b.getChannelData(0),w=Math.floor(b.sampleRate*.05),n=Math.floor(a.length/w),e=new Float32Array(n);let mx=0;for(let i=0;i<n;i++){let s=0;for(let j=0;j<w;j++){const x=a[i*w+j];s+=x*x}e[i]=Math.sqrt(s/w);if(e[i]>mx)mx=e[i]}return e.map(x=>x/(mx||1))}
+$('#mx').onclick=async()=>{const v=S.voice;if(!v)return;$('#mxs').textContent='Mezclando…';await new Promise(r=>setTimeout(r,30));
+const sr=44100,c=new OfflineAudioContext(1,Math.ceil((v.duration+2.5)*sr),sr),e=envel(v);let pk=0;const a=v.getChannelData(0);for(let i=0;i<a.length;i++){const x=Math.abs(a[i]);if(x>pk)pk=x}
+const base=Math.min(8,.9/(pk||1))*Math.pow(10,$('#vg').value/20),duck=$('#dk').value/100,gate=$('#gt').checked;
+const m=c.createDynamicsCompressor();m.threshold.value=-6;m.ratio.value=12;m.connect(c.destination);
+const s=c.createBufferSource();s.buffer=v;const hp=c.createBiquadFilter();hp.type='highpass';hp.frequency.value=$('#hp').checked?90:10;const cp=c.createDynamicsCompressor();cp.threshold.value=-24;cp.ratio.value=$('#cm').checked?4:1;const g=c.createGain();g.gain.value=base;s.connect(hp);hp.connect(cp);cp.connect(g);g.connect(m);s.start(0);
+const fb=c.createGain();fb.connect(m);let lg=1,ld=1,hold=0;
+e.forEach((x,i)=>{const t=i*.05,gg=gate&&x<.06?.12:1;if(gg!==lg){g.gain.setTargetAtTime(base*gg,t,.04);lg=gg}if(x>.1)hold=8;else hold--;const dd=hold>0?1-duck:1;if(dd!==ld){fb.gain.setTargetAtTime(dd,t,.2);ld=dd}});
+C.forEach(q=>{if(q.on)sched(c,fb,q.k,Math.max(0,q.s),Math.min(q.e,v.duration+2),q.v)});
+S.mix=await c.startRendering();$('#mxs').textContent='Mezcla lista ('+fmt(S.mix.duration)+'). Escúchala y ajusta lo que quieras.';['pm','st','ex'].forEach(x=>$('#'+x).disabled=false)};
+$('#ex').onclick=async()=>{if(!S.mix)return;stop();await AC.resume();const mt=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(x=>window.MediaRecorder&&MediaRecorder.isTypeSupported(x));if(!mt)return msg('Este navegador no puede guardar audio desde aquí.');
+const d=AC.createMediaStreamDestination(),s=AC.createBufferSource();s.buffer=S.mix;s.connect(d);const mr=new MediaRecorder(d.stream,{mimeType:mt}),ch=[];mr.ondataavailable=e=>e.data.size&&ch.push(e.data);
+$('#ex').disabled=true;const t0=Date.now(),tk=setInterval(()=>$('#mxs').textContent='Guardando… faltan '+fmt(Math.max(0,S.mix.duration-(Date.now()-t0)/1000)),500);
+mr.onstop=async()=>{clearInterval(tk);$('#ex').disabled=false;$('#mxs').textContent='Listo.';const b=new Blob(ch,{type:mt}),nm=($('#nm').value.trim()||'relato-sonoro').replace(/[\\/:*?"<>|]/g,''),fn=nm+(mt.includes('mp4')?'.mp4':'.webm');try{const dl=window.claude&&await claude.use('downloads');if(!dl)throw 0;await dl.save({filename:fn,data:b})}catch(er){if(er&&er.code==='declined')return;const u=URL.createObjectURL(b);msg('No pude abrir el guardado automático. Mantén presionado el reproductor para descargar.');const au=document.createElement('audio');au.controls=true;au.src=u;$('#msg').after(au)}};
+mr.start();s.start();s.onended=()=>setTimeout(()=>mr.stop(),400)};
+</script><a data-volver-menu href="../" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;z-index:2147483647;padding:7px 13px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:600 13px/1 system-ui,sans-serif;text-decoration:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)">‹ Menú</a>
+</body></html>
