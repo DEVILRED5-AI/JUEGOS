@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pagos del Airbnb</title>
+<style>
+:root{--bg1:#ff5a5f;--bg2:#ff8a5f;--card:#fff;--text:#222;--muted:#6b6b6b;--soft:#fff1f1;--line:#eee;--input:#fff;--ok:#00a699;--danger:#d62828;--dangerbg:#ffe3e3;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg1:#7a1f2b;--bg2:#8a3a22;--card:#1e1e22;--text:#f2f2f2;--muted:#a0a0a8;--soft:#2a2226;--line:#333339;--input:#27272c;--danger:#ff7b7b;--dangerbg:#3a2224;color-scheme:dark}}
+:root[data-theme="dark"]{--bg1:#7a1f2b;--bg2:#8a3a22;--card:#1e1e22;--text:#f2f2f2;--muted:#a0a0a8;--soft:#2a2226;--line:#333339;--input:#27272c;--danger:#ff7b7b;--dangerbg:#3a2224;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{background:linear-gradient(160deg,var(--bg1),var(--bg2)) fixed;background-color:var(--bg1);min-height:100vh;padding:16px;color:var(--text)}
+.wrap{max-width:480px;margin:auto}
+h1{color:#fff;text-align:center;margin:8px 0 16px;font-size:26px}
+.card{background:var(--card);border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.resumen{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;margin-top:4px}
+.resumen div{background:var(--soft);border-radius:14px;padding:10px 4px}
+.resumen small{display:block;color:var(--muted);font-size:12px}
+.resumen b{font-size:16px}
+.barra{height:16px;background:var(--line);border-radius:10px;overflow:hidden;margin:14px 0 6px}
+.barra div{height:100%;width:0;background:linear-gradient(90deg,#00a699,#4cd9c5);transition:width .4s}
+.pct{text-align:center;font-weight:700;color:var(--ok)}
+label{font-size:13px;color:var(--muted)}
+input{width:100%;padding:12px;border:2px solid var(--line);background:var(--input);color:var(--text);border-radius:12px;font-size:16px;margin:4px 0 10px}
+input:focus{outline:none;border-color:#ff5a5f}
+button{border:none;border-radius:12px;padding:12px 16px;font-size:15px;font-weight:700;cursor:pointer}
+.principal{background:#ff5a5f;color:#fff;width:100%}
+.persona{padding:12px 0;border-bottom:1px solid var(--line)}
+.persona:last-child{border:none}
+.fila{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.nombre{font-weight:700}
+.pagado{font-size:13px;color:var(--ok)}
+.acciones{display:flex;gap:6px;align-items:center;margin-top:8px}
+.acciones input{margin:0;padding:10px;flex:1;min-width:0}
+.mas{background:var(--ok);color:#fff;padding:10px 14px}
+.del{background:var(--dangerbg);color:var(--danger);padding:8px 12px}
+.vacio{text-align:center;color:var(--muted);padding:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🏠 Pagos del Airbnb</h1>
+
+<div class="card">
+<label for="meta">Meta total a recolectar</label>
+<input id="meta" type="number" inputmode="numeric" placeholder="Ej: 1500000">
+<div class="resumen">
+<div><small>Meta</small><b id="vmeta">$0</b></div>
+<div><small>Recaudado</small><b id="recaudado">$0</b></div>
+<div><small>Falta</small><b id="falta">$0</b></div>
+</div>
+<div class="barra"><div id="progreso"></div></div>
+<div class="pct" id="pct">0%</div>
+</div>
+
+<div class="card">
+<label for="nombre">Agregar compañero</label>
+<input id="nombre" placeholder="Nombre">
+<button class="principal" id="btnAgregar">Agregar persona</button>
+</div>
+
+<div class="card" id="lista"></div>
+</div>
+
+<script>
+var datos = {meta:0, personas:[]};
+try{ var g = localStorage.getItem('airbnb'); if(g){ datos = JSON.parse(g); } }catch(e){}
+function fmt(n){ return '$' + Math.round(n).toLocaleString('es-CO'); }
+function guardar(){ try{ localStorage.setItem('airbnb', JSON.stringify(datos)); }catch(e){} render(); }
+function agregar(){
+  var campo = document.getElementById('nombre');
+  var n = campo.value.trim();
+  if(!n) return;
+  datos.personas.push({id: Date.now(), nombre: n, pagado: 0});
+  campo.value = '';
+  guardar();
+}
+function abonar(id, valor){
+  var v = parseFloat(valor);
+  if(!v) return;
+  for(var i=0;i<datos.personas.length;i++){ if(datos.personas[i].id===id){ datos.personas[i].pagado += v; } }
+  guardar();
+}
+function borrar(id){
+  if(!confirm('¿Borrar a esta persona?')) return;
+  datos.personas = datos.personas.filter(function(p){ return p.id!==id; });
+  guardar();
+}
+function resumen(){
+  var total = datos.personas.reduce(function(s,p){ return s+p.pagado; }, 0);
+  var falta = Math.max(datos.meta-total, 0);
+  var pct = datos.meta ? Math.min(total/datos.meta*100, 100) : 0;
+  document.getElementById('vmeta').textContent = fmt(datos.meta);
+  document.getElementById('recaudado').textContent = fmt(total);
+  document.getElementById('falta').textContent = fmt(falta);
+  document.getElementById('progreso').style.width = pct + '%';
+  document.getElementById('pct').textContent = Math.round(pct) + '%' + (datos.meta && total>=datos.meta ? ' 🎉 ¡Meta lograda!' : '');
+}
+function render(){
+  var l = document.getElementById('lista');
+  l.innerHTML = '';
+  if(!datos.personas.length){
+    var v = document.createElement('div'); v.className='vacio'; v.textContent='Aún no hay compañeros agregados'; l.appendChild(v);
+  }
+  datos.personas.forEach(function(p){
+    var cont = document.createElement('div'); cont.className='persona';
+    var fila = document.createElement('div'); fila.className='fila';
+    var info = document.createElement('div');
+    var nom = document.createElement('div'); nom.className='nombre'; nom.textContent = p.nombre;
+    var pag = document.createElement('div'); pag.className='pagado'; pag.textContent = 'Ha pagado ' + fmt(p.pagado);
+    info.appendChild(nom); info.appendChild(pag);
+    var del = document.createElement('button'); del.className='del'; del.textContent='🗑'; del.onclick=function(){ borrar(p.id); };
+    fila.appendChild(info); fila.appendChild(del);
+    var acc = document.createElement('div'); acc.className='acciones';
+    var inp = document.createElement('input'); inp.type='number'; inp.inputMode='numeric'; inp.placeholder='Cuota que pagó';
+    var mas = document.createElement('button'); mas.className='mas'; mas.textContent='+ Abonar';
+    mas.onclick=function(){ abonar(p.id, inp.value); };
+    acc.appendChild(inp); acc.appendChild(mas);
+    cont.appendChild(fila); cont.appendChild(acc);
+    l.appendChild(cont);
+  });
+  resumen();
+}
+document.getElementById('btnAgregar').onclick = agregar;
+document.getElementById('nombre').addEventListener('keydown', function(e){ if(e.key==='Enter') agregar(); });
+document.getElementById('meta').addEventListener('input', function(e){
+  datos.meta = parseFloat(e.target.value) || 0;
+  try{ localStorage.setItem('airbnb', JSON.stringify(datos)); }catch(err){}
+  resumen();
+});
+document.getElementById('meta').value = datos.meta || '';
+render();
+</script>
+<a data-volver-menu href="../" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;z-index:2147483647;padding:7px 13px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:600 13px/1 system-ui,sans-serif;text-decoration:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)">‹ Menú</a>
+</body>
+</html>
