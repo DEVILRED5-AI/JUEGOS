@@ -34,5 +34,14 @@
     "tag": "1 jugador",
     "c1": "#ffcf5c",
     "c2": "#ff8a3d"
+  },
+  {
+    "nombre": "Pagos",
+    "desc": "",
+    "ruta": "pagos/",
+    "emoji": "💸",
+    "tag": "1 jugador",
+    "c1": "#ffcf5c",
+    "c2": "#ff8a3d"
   }
 ]
